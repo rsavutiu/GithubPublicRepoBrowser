@@ -1,24 +1,31 @@
 package com.rsav.githubPublicRepoBrowser.data.repository
 
-import com.rsav.githubPublicRepoBrowser.data.mapper.toDomainModel
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import com.rsav.githubPublicRepoBrowser.data.paging.RepoPagingSource
 import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.repository.RepoRepository
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class RepoRepositoryImpl @Inject constructor(
     private val dataSource: ApolloRepoDataSource,
 ) : RepoRepository {
 
-    override suspend fun searchRepositories(query: String, first: Int): Result<List<Repo>> {
-        return try {
-            val data = dataSource.searchRepositories(query, first)
-            val repos = data.search.nodes?.mapNotNull { node ->
-                node?.onRepository?.toDomainModel()
-            } ?: emptyList()
-            Result.success(repos)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    override fun searchRepositories(query: String): Flow<PagingData<Repo>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = PAGE_SIZE,
+                initialLoadSize = PAGE_SIZE,
+                enablePlaceholders = false,
+            ),
+            pagingSourceFactory = { RepoPagingSource(dataSource, query) },
+        ).flow
+    }
+
+    companion object {
+        const val PAGE_SIZE = 20
     }
 }

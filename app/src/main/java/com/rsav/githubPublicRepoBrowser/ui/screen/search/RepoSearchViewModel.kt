@@ -2,18 +2,25 @@ package com.rsav.githubPublicRepoBrowser.ui.screen.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.usecase.SearchReposUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class RepoSearchViewModel @Inject constructor(
     private val searchReposUseCase: SearchReposUseCase,
@@ -24,6 +31,16 @@ class RepoSearchViewModel @Inject constructor(
 
     private val _sideEffects = Channel<SearchSideEffect>(Channel.BUFFERED)
     val sideEffects = _sideEffects.receiveAsFlow()
+
+    private val _searchTrigger = MutableSharedFlow<String>(replay = 1)
+
+    val pagingData: Flow<PagingData<Repo>> = _searchTrigger
+        .flatMapLatest { query -> searchReposUseCase(query) }
+        .cachedIn(viewModelScope)
+
+    init {
+        _searchTrigger.tryEmit("")
+    }
 
     fun onIntent(intent: SearchIntent) {
         when (intent) {
@@ -38,21 +55,7 @@ class RepoSearchViewModel @Inject constructor(
     }
 
     private fun reduceSearch() {
-        val query = _uiState.value.query
-
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-
-            searchReposUseCase(query)
-                .onSuccess { repos ->
-                    _uiState.update { it.copy(isLoading = false, repos = repos.toImmutableList()) }
-                }
-                .onFailure { error ->
-                    _uiState.update {
-                        it.copy(isLoading = false, error = error.message ?: "Unknown error")
-                    }
-                }
-        }
+        _searchTrigger.tryEmit(_uiState.value.query)
     }
 
     private fun reduceRepoClicked(url: String) {

@@ -1,6 +1,10 @@
-query SearchRepositories($query: String!, $first: Int!) {
-    search(query: $query, type: REPOSITORY, first: $first) {
+query SearchRepositories($query: String!, $first: Int!, $after: String) {
+    search(query: $query, type: REPOSITORY, first: $first, after: $after) {
         repositoryCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
         nodes {
             ... on Repository {
                 id
@@ -15,6 +19,7 @@ query SearchRepositories($query: String!, $first: Int!) {
                     color
                 }
                 owner {
+                    __typename
                     login
                     avatarUrl
                 }

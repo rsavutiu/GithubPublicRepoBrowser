@@ -16,5 +16,6 @@ fun SearchRepositoriesQuery.OnRepository.toDomainModel(): Repo {
         languageColor = primaryLanguage?.color,
         ownerLogin = owner.login,
         ownerAvatarUrl = owner.avatarUrl.toString(),
+        ownerType = owner.__typename,
     )
 }

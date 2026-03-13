@@ -45,6 +45,7 @@ fun RepoCardSimple(
                 GithubAvatar(
                     modifier = Modifier.size(avatarSize.dp),
                     url = repo.ownerAvatarUrl,
+                    isOrganization = repo.ownerType == "Organization",
                 )
             }
             Column(modifier = Modifier) {

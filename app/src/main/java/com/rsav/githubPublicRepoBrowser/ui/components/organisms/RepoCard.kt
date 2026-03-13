@@ -39,6 +39,7 @@ fun RepoCard(
             repo.ownerAvatarUrl?.let {
                 GithubAvatar(
                     url = it,
+                    isOrganization = repo.ownerType == "Organization",
                 )
             }
             Column(modifier = Modifier) {

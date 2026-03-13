@@ -1,8 +1,8 @@
 package com.rsav.githubPublicRepoBrowser.data.remote
 
 import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.api.Optional
 import com.rsav.githubPublicRepoBrowser.SearchRepositoriesQuery
-import com.rsav.githubPublicRepoBrowser.selections.SearchRepositoriesQuerySelections
 import javax.inject.Inject
 
 class ApolloRepoDataSource @Inject constructor(
@@ -11,9 +11,14 @@ class ApolloRepoDataSource @Inject constructor(
     suspend fun searchRepositories(
         query: String,
         first: Int,
+        after: String? = null,
     ): SearchRepositoriesQuery.Data {
         val response = apolloClient.query(
-            SearchRepositoriesQuery(query = "language: $query", first = first)
+            SearchRepositoriesQuery(
+                query = query,
+                first = first,
+                after = Optional.presentIfNotNull(after),
+            )
         ).execute()
 
         if (response.hasErrors()) {

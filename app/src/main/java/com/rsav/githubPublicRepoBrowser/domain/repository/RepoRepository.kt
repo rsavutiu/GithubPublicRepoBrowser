@@ -1,7 +1,9 @@
 package com.rsav.githubPublicRepoBrowser.domain.repository
 
+import androidx.paging.PagingData
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
+import kotlinx.coroutines.flow.Flow
 
 interface RepoRepository {
-    suspend fun searchRepositories(query: String, first: Int = 20): Result<List<Repo>>
+    fun searchRepositories(query: String): Flow<PagingData<Repo>>
 }

@@ -12,4 +12,5 @@ data class Repo(
     val languageColor: String?,
     val ownerLogin: String,
     val ownerAvatarUrl: String?,
+    val ownerType: String = "User",
 )

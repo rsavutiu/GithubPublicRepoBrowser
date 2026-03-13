@@ -18,11 +18,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
 import com.rsav.githubPublicRepoBrowser.ui.components.molecules.SearchBar
 import com.rsav.githubPublicRepoBrowser.ui.components.organisms.RepoList
-import androidx.core.net.toUri
 
 @Composable
 fun RepoSearchScreen(
@@ -30,14 +32,10 @@ fun RepoSearchScreen(
     viewModel: RepoSearchViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val repos = viewModel.pagingData.collectAsLazyPagingItems()
     val context = LocalContext.current
 
-    //Initially load random public repositories without a search query
-    LaunchedEffect(Unit) {
-        viewModel.onIntent(SearchIntent.Search)
-    }
-
-    //Details page to be implemented later
+    // Details page to be implemented later
     LaunchedEffect(Unit) {
         viewModel.sideEffects.collect { sideEffect ->
             when (sideEffect) {
@@ -63,7 +61,7 @@ fun RepoSearchScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         when {
-            uiState.isLoading -> {
+            repos.loadState.refresh is LoadState.Loading -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
@@ -71,19 +69,20 @@ fun RepoSearchScreen(
                     CircularProgressIndicator()
                 }
             }
-            uiState.error != null -> {
+            repos.loadState.refresh is LoadState.Error -> {
+                val error = (repos.loadState.refresh as LoadState.Error).error
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = uiState.error!!,
+                        text = error.localizedMessage ?: "Unknown error",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyLarge,
                     )
                 }
             }
-            uiState.repos.isEmpty() && uiState.query.isNotBlank() && !uiState.isLoading -> {
+            repos.itemCount == 0 && repos.loadState.refresh is LoadState.NotLoading -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center,
@@ -96,7 +95,7 @@ fun RepoSearchScreen(
             }
             else -> {
                 RepoList(
-                    repos = uiState.repos,
+                    repos = repos,
                     onRepoClick = { viewModel.onIntent(SearchIntent.RepoClicked(it)) },
                 )
             }

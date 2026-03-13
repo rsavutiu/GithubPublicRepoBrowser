@@ -18,6 +18,7 @@ val sampleRepos = persistentListOf(
         languageColor = "#A97BFF",
         ownerLogin = "android",
         ownerAvatarUrl = "https://avatars.githubusercontent.com/u/32689599",
+        ownerType = "Organization",
     ),
     Repo(
         id = "2",
@@ -44,6 +45,7 @@ val sampleRepos = persistentListOf(
         languageColor = null,
         ownerLogin = "google",
         ownerAvatarUrl = "https://avatars.githubusercontent.com/u/1342004",
+        ownerType = "Organization",
     )
 )
 
