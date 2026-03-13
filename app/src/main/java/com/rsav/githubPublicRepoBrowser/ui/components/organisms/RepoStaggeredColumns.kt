@@ -21,7 +21,7 @@ import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 fun RepoStaggeredColumn(
     repos: LazyPagingItems<Repo>,
     modifier: Modifier = Modifier,
-    onRepoClick: (String) -> Unit = {},
+    onRepoClick: (Repo) -> Unit = {},
 ) {
     val gridState = rememberLazyStaggeredGridState()
     LazyVerticalStaggeredGrid(

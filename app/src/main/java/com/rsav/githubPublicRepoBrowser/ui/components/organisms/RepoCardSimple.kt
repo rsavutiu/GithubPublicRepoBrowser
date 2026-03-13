@@ -1,7 +1,10 @@
 package com.rsav.githubPublicRepoBrowser.ui.components.organisms
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +17,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,46 +28,78 @@ import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
 import com.rsav.githubPublicRepoBrowser.ui.preview.SampleRepoProvider
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 
-const val avatarSize = 64
+private const val AVATAR_SIZE = 48
+private const val SHARED_ANIM_MS = 1000
+
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun RepoCardSimple(
     repo: Repo,
-    onClick: (String) -> Unit,
+    onClick: (Repo) -> Unit,
     modifier: Modifier = Modifier,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    sharedTransitionScope: SharedTransitionScope? = null,
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick(repo.url) },
+            .clickable { onClick(repo) },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
-        Row(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
-            if (repo.ownerAvatarUrl.isNullOrBlank()) {
-                Box(modifier = Modifier.size(avatarSize.dp))
-            }
-            else {
-                GithubAvatar(
-                    modifier = Modifier.size(avatarSize.dp),
-                    url = repo.ownerAvatarUrl,
-                    isOrganization = repo.ownerType == "Organization",
-                )
-            }
-            Column(modifier = Modifier) {
-                Text(
-                    text = repo.nameWithOwner,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+        Column(modifier = Modifier.padding(8.dp).fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (!repo.ownerAvatarUrl.isNullOrBlank()) {
+                    val avatarModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                        with(sharedTransitionScope) {
+                            Modifier
+                                .sharedBounds(
+                                    sharedContentState = rememberSharedContentState(key = "avatar-${repo.id}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    boundsTransform = { _, _ -> tween(SHARED_ANIM_MS) },
+                                )
+                                .size(AVATAR_SIZE.dp)
+                        }
+                    } else {
+                        Modifier.size(AVATAR_SIZE.dp)
+                    }
 
-                if (!repo.description.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = repo.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                    GithubAvatar(
+                        modifier = avatarModifier,
+                        url = repo.ownerAvatarUrl,
+                        isOrganization = repo.ownerType == "Organization",
                     )
                 }
+
+                val nameModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                    with(sharedTransitionScope) {
+                        Modifier.sharedBounds(
+                            sharedContentState = rememberSharedContentState(key = "name-${repo.id}"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            boundsTransform = { _, _ -> tween(SHARED_ANIM_MS) },
+                        )
+                    }
+                } else {
+                    Modifier
+                }
+
+                Text(
+                    modifier = nameModifier,
+                    text = repo.nameWithOwner,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+
+            if (!repo.description.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = repo.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
@@ -72,7 +108,7 @@ fun RepoCardSimple(
 @Preview(showBackground = true)
 @Composable
 private fun RepoCardPreview(
-    @PreviewParameter(SampleRepoProvider::class) repo: Repo
+    @PreviewParameter(SampleRepoProvider::class) repo: Repo,
 ) {
     MyApplicationTheme {
         RepoCardSimple(

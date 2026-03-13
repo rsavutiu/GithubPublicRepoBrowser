@@ -107,6 +107,7 @@ class RepoMapperTest {
             owner = SearchRepositoriesQuery.Owner(
                 login = ownerLogin,
                 avatarUrl = "https://github.com/$ownerLogin.png",
+                __typename = "Organisation"
             ),
         )
     }

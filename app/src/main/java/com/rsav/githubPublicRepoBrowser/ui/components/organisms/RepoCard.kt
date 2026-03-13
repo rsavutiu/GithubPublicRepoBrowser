@@ -26,13 +26,13 @@ import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 @Composable
 fun RepoCard(
     repo: Repo,
-    onClick: (String) -> Unit,
+    onClick: (Repo) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { onClick(repo.url) },
+            .clickable { onClick(repo) },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Row(modifier = Modifier.padding(8.dp).fillMaxWidth()) {

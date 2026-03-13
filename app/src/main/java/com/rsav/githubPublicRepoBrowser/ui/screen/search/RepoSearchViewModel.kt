@@ -46,7 +46,7 @@ class RepoSearchViewModel @Inject constructor(
         when (intent) {
             is SearchIntent.QueryChanged -> reduceQueryChanged(intent.query)
             is SearchIntent.Search -> reduceSearch()
-            is SearchIntent.RepoClicked -> reduceRepoClicked(intent.url)
+            is SearchIntent.RepoClicked -> reduceRepoClicked(intent.repo)
         }
     }
 
@@ -58,9 +58,9 @@ class RepoSearchViewModel @Inject constructor(
         _searchTrigger.tryEmit(_uiState.value.query)
     }
 
-    private fun reduceRepoClicked(url: String) {
+    private fun reduceRepoClicked(repo: Repo) {
         viewModelScope.launch {
-            _sideEffects.send(SearchSideEffect.OpenUrl(url))
+            _sideEffects.send(SearchSideEffect.NavigateToDetail(repo))
         }
     }
 }

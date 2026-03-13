@@ -9,10 +9,10 @@ import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 
 @Composable
 fun SearchBar(
+    modifier: Modifier = Modifier,
     query: String,
     onQueryChanged: (String) -> Unit,
-    onSearch: () -> Unit,
-    modifier: Modifier = Modifier,
+    onSearch: () -> Unit
 ) {
     SearchTextField(
         value = query,

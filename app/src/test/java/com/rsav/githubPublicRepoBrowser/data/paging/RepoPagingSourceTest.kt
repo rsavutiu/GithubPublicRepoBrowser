@@ -162,6 +162,7 @@ class RepoPagingSourceTest {
             owner = SearchRepositoriesQuery.Owner(
                 login = "owner",
                 avatarUrl = "https://github.com/owner.png",
+                __typename = "Organization"
             ),
         )
     }

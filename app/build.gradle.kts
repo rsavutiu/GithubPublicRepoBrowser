@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.apollo)
     alias(libs.plugins.hilt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 val localProperties = Properties().apply {
@@ -80,6 +81,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.androidx.compose.animation)
 
     // Immutable Collections (Compose stability)
     implementation(libs.kotlinx.collections.immutable)
@@ -94,6 +96,10 @@ dependencies {
     // Paging 3
     implementation(libs.androidx.paging.runtime)
     implementation(libs.androidx.paging.compose)
+
+    // Navigation
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.serialization.json)
 
     // Hilt DI
     implementation(libs.hilt.android)

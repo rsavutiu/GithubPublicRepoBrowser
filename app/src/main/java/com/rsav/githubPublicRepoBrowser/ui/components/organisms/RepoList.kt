@@ -1,23 +1,26 @@
 package com.rsav.githubPublicRepoBrowser.ui.components.organisms
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
-import com.rsav.githubPublicRepoBrowser.ui.preview.SampleRepoProvider
 import com.rsav.githubPublicRepoBrowser.ui.preview.sampleRepos
 import kotlinx.coroutines.flow.flowOf
 
@@ -25,34 +28,49 @@ import kotlinx.coroutines.flow.flowOf
 fun RepoList(
     repos: LazyPagingItems<Repo>,
     modifier: Modifier = Modifier,
-    onRepoClick: (String) -> Unit = {},
+    onRepoClick: (Repo) -> Unit = {},
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    sharedTransitionScope: SharedTransitionScope? = null,
 ) {
-    LazyColumn(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        items(
-            count = repos.itemCount,
-            key = { index -> repos.peek(index)?.id ?: index },
-        ) { index ->
-            val repo = repos[index]
-            if (repo != null) {
-                RepoCardSimple(
-                    repo = repo,
-                    onClick = onRepoClick,
-                )
-            }
-        }
+    val isRefreshing = repos.loadState.refresh is LoadState.Loading
+    val onRefresh = { repos.refresh() }
 
-        if (repos.loadState.append is LoadState.Loading) {
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator()
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        modifier = modifier
+    ) {
+        LazyVerticalStaggeredGrid(
+            modifier = modifier,
+            columns = StaggeredGridCells.Fixed(2),
+            verticalItemSpacing = 8.dp,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(
+                count = repos.itemCount,
+                key = { index -> repos.peek(index)?.id ?: index },
+            ) { index ->
+                val repo = repos[index]
+                if (repo != null) {
+                    RepoCardSimple(
+                        repo = repo,
+                        onClick = onRepoClick,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        sharedTransitionScope = sharedTransitionScope
+                    )
+                }
+            }
+
+            if (repos.loadState.append is LoadState.Loading) {
+                item(span = StaggeredGridItemSpan.FullLine) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }
@@ -65,6 +83,5 @@ private fun RepoListPreview() {
     val repos = flowOf(PagingData.from(sampleRepos)).collectAsLazyPagingItems()
     RepoList(
         repos = repos,
-        onRepoClick = {},
     )
 }

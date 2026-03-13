@@ -6,9 +6,11 @@ import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.usecase.SearchReposUseCase
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -60,25 +62,36 @@ class RepoSearchViewModelTest {
 
     @Test
     fun `RepoClicked intent emits OpenUrl side effect`() = runTest {
+        val testRepos = listOf(createTestRepo("1"))
         viewModel.sideEffects.test {
-            viewModel.onIntent(SearchIntent.RepoClicked("https://github.com/test/repo"))
+            viewModel.onIntent(SearchIntent.RepoClicked(testRepos.first()))
 
             val effect = awaitItem()
-            assertTrue(effect is SearchSideEffect.OpenUrl)
-            assertEquals("https://github.com/test/repo", (effect as SearchSideEffect.OpenUrl).url)
+            assertTrue(effect is SearchSideEffect.NavigateToDetail)
+            assertEquals("https://github.com/owner/test-repo-1", (effect as SearchSideEffect.NavigateToDetail).repo.url)
         }
     }
 
     @Test
     fun `Search intent triggers new paging flow`() = runTest {
         val testRepos = listOf(createTestRepo("1"))
-        every { searchReposUseCase("kotlin") } returns flowOf(PagingData.from(testRepos))
+        every { searchReposUseCase(any()) } returns flowOf(PagingData.from(testRepos))
+
+        // Start collecting pagingData so flatMapLatest actually runs
+        val collectJob = launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.pagingData.collect {}
+        }
+
+        // Clear recorded calls from init emission
+        io.mockk.clearMocks(searchReposUseCase, answers = false)
 
         viewModel.onIntent(SearchIntent.QueryChanged("kotlin"))
         viewModel.onIntent(SearchIntent.Search)
 
         // Verify the use case was called with the query
-        io.mockk.verify { searchReposUseCase("kotlin") }
+        verify { searchReposUseCase("kotlin") }
+
+        collectJob.cancel()
     }
 
     private fun createTestRepo(id: String) = Repo(
