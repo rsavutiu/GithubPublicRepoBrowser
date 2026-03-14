@@ -1,6 +1,5 @@
 package com.rsav.githubPublicRepoBrowser.data.mapper
 
-import com.rsav.githubPublicRepoBrowser.RepositoryDetailsQuery
 import com.rsav.githubPublicRepoBrowser.SearchRepositoriesQuery
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 
@@ -19,5 +18,6 @@ fun SearchRepositoriesQuery.OnRepository.toDomainModel(): Repo {
         ownerAvatarUrl = owner.avatarUrl,
         ownerType = owner.__typename,
         createdAt = createdAt,
+        updatedAt = updatedAt
     )
 }

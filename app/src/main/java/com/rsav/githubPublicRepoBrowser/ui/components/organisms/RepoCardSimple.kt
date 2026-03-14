@@ -108,6 +108,11 @@ fun RepoCardSimple(
                 Spacer(modifier = Modifier.height(4.dp))
                 FormattedDate(isoDate = repo.createdAt)
             }
+
+            if (!repo.updatedAt.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                FormattedDate(prefix = "Last Update at: ", isoDate = repo.updatedAt)
+            }
         }
     }
 }

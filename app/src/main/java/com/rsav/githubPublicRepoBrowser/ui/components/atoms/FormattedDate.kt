@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 private val ISO_PARSER = DateTimeFormatter.ISO_DATE_TIME
-private val DISPLAY_FORMAT = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH)
+private val DISPLAY_FORMAT = DateTimeFormatter.ofPattern("d, MMM, yyyy", Locale.ENGLISH)
 
 fun formatIsoDate(iso: String): String {
     return try {

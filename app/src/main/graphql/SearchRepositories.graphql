@@ -15,6 +15,7 @@ query SearchRepositories($query: String!, $first: Int!, $after: String) {
                 stargazerCount
                 forkCount
                 createdAt
+                updatedAt
                 primaryLanguage {
                     name
                     color
