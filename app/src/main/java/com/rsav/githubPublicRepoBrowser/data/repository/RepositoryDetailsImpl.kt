@@ -5,7 +5,7 @@ import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
 import com.rsav.githubPublicRepoBrowser.domain.repository.IRepositoryDetails
 import javax.inject.Inject
 
-class RepositoryDetailsImpl@Inject constructor(
+class RepositoryDetailsImpl @Inject constructor(
     private val dataSource: ApolloRepoDataSource,
 ): IRepositoryDetails {
     override suspend fun getRepositoryDetails(

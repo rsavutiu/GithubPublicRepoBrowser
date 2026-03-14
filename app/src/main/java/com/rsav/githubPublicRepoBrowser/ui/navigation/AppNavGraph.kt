@@ -36,7 +36,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             ) {
                 RepoSearchScreen(
                     onNavigateToDetail = { repo ->
-                        val json = Json.encodeToString(Repo.serializer(), repo)
+                        val json = Json.encodeToString<Repo>(repo)
                         navController.navigate(DetailRoute(repoJson = json))
                     },
                     modifier = modifier,
@@ -50,7 +50,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 popExitTransition = { fadeOut(tween(FADE_DURATION_MS)) },
             ) { backStackEntry ->
                 val route = backStackEntry.toRoute<DetailRoute>()
-                val repo = Json.decodeFromString(Repo.serializer(), route.repoJson)
+                val repo = Json.decodeFromString<Repo>(route.repoJson)
 
                 RepoDetailScreen(
                     repo = repo,

@@ -1,8 +1,6 @@
 package com.rsav.githubPublicRepoBrowser.domain.repository
 
-import com.rsav.githubPublicRepoBrowser.domain.model.Repo
-
-//Returns same object but with md blob if available (readmetext)
+/** Returns the README content as a string, or null if unavailable. */
 interface IRepositoryDetails {
     suspend fun getRepositoryDetails(name: String, owner: String): String?
 }

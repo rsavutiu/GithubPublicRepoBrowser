@@ -165,6 +165,7 @@ class RepoPagingSourceTest {
                 __typename = "Organization"
             ),
             createdAt = "2020-01-15T10:30:00Z",
+            updatedAt = "2024-01-15T10:30:00Z",
         )
     }
 }

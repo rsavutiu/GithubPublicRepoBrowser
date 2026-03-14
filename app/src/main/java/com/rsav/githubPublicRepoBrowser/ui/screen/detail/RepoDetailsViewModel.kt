@@ -24,7 +24,8 @@ class RepoDetailsViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(DetailUiState())
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
-
+    val parser: Parser? = Parser.builder().build()
+    val htmlRenderer: HtmlRenderer? = HtmlRenderer.builder().build()
     private val _sideEffects = Channel<DetailSideEffect>(Channel.BUFFERED)
     val sideEffects = _sideEffects.receiveAsFlow()
 
@@ -51,9 +52,8 @@ class RepoDetailsViewModel @Inject constructor(
 
     private fun markdownToHtml(markdown: String?): String? {
         if (markdown.isNullOrBlank()) return null
-        val parser = Parser.builder().build()
-        val document = parser.parse(markdown)
-        return HtmlRenderer.builder().build().render(document)
+        val document = parser?.parse(markdown)
+        return htmlRenderer?.render(document)
     }
 
     private fun reduceSideEffect(effect: DetailSideEffect) {

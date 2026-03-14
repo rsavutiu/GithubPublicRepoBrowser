@@ -26,8 +26,8 @@ import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun RepoList(
-    repos: LazyPagingItems<Repo>,
     modifier: Modifier = Modifier,
+    repos: LazyPagingItems<Repo>,
     onRepoClick: (Repo) -> Unit = {},
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
@@ -41,7 +41,6 @@ fun RepoList(
         modifier = modifier
     ) {
         LazyVerticalStaggeredGrid(
-            modifier = modifier,
             columns = StaggeredGridCells.Fixed(2),
             verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp),

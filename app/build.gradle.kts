@@ -63,7 +63,7 @@ apollo {
         mapScalar("URI", "kotlin.String")
         introspection {
             endpointUrl.set("https://api.github.com/graphql")
-            headers.put("Authorization", "Bearer ${System.getenv("GITHUB_TOKEN")}")
+            headers.put("Authorization", "Bearer ${localProperties.getProperty("github.token", "")}")
             schemaFile.set(file("src/main/graphql/schema.graphqls"))
         }
     }

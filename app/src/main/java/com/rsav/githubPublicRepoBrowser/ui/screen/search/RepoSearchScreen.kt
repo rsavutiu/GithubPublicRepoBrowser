@@ -32,8 +32,8 @@ import com.rsav.githubPublicRepoBrowser.ui.components.organisms.RepoList
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepoSearchScreen(
-    onNavigateToDetail: (Repo) -> Unit,
     modifier: Modifier = Modifier,
+    onNavigateToDetail: (Repo) -> Unit,
     viewModel: RepoSearchViewModel = hiltViewModel(),
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
@@ -109,7 +109,7 @@ fun RepoSearchScreen(
 
                     else -> {
                         RepoList(
-                            modifier = modifier.padding(horizontal = 8.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp),
                             repos = repos,
                             onRepoClick = { viewModel.onIntent(SearchIntent.RepoClicked(it)) },
                             animatedVisibilityScope = animatedVisibilityScope,

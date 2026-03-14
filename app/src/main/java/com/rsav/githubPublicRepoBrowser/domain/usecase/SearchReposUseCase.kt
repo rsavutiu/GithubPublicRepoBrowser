@@ -10,7 +10,12 @@ class SearchReposUseCase @Inject constructor(
     private val repository: ISearchRepositories
 ) {
     operator fun invoke(query: String): Flow<PagingData<Repo>> {
-        val effectiveQuery = query.trim().ifBlank { DEFAULT_QUERY }
+        val effectiveQuery = if (query.trim().isNotBlank()) {
+            "language:$query"
+        }
+        else {
+            DEFAULT_QUERY
+        }
         return repository.searchRepositories(effectiveQuery)
     }
 

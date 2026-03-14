@@ -10,10 +10,11 @@ class RepoPagingSource(
     private val dataSource: ApolloRepoDataSource,
     private val query: String,
 ) : PagingSource<String, Repo>() {
-
+    var lastKey: String? = null
     override suspend fun load(params: LoadParams<String>): LoadResult<String, Repo> {
         return try {
             val cursor = params.key
+            lastKey = cursor
             val data = dataSource.searchRepositories(
                 query = query,
                 first = params.loadSize,
@@ -35,6 +36,6 @@ class RepoPagingSource(
     }
 
     override fun getRefreshKey(state: PagingState<String, Repo>): String? {
-        return null
+        return lastKey
     }
 }
