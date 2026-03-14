@@ -16,4 +16,6 @@ data class Repo(
     val ownerLogin: String,
     val ownerAvatarUrl: String? = null,
     val ownerType: String = "User",
+    val readmeText: String? = null,
+    val createdAt: String? = null,
 )

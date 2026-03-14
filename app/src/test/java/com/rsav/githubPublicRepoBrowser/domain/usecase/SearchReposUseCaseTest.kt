@@ -1,8 +1,7 @@
 package com.rsav.githubPublicRepoBrowser.domain.usecase
 
 import androidx.paging.PagingData
-import com.rsav.githubPublicRepoBrowser.domain.model.Repo
-import com.rsav.githubPublicRepoBrowser.domain.repository.RepoRepository
+import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -12,7 +11,7 @@ import org.junit.Test
 
 class SearchReposUseCaseTest {
 
-    private lateinit var repository: RepoRepository
+    private lateinit var repository: ISearchRepositories
     private lateinit var useCase: SearchReposUseCase
 
     @Before

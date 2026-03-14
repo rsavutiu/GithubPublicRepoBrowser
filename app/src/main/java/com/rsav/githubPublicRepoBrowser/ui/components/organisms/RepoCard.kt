@@ -18,6 +18,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.FormattedDate
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
 import com.rsav.githubPublicRepoBrowser.ui.components.molecules.RepoStats
 import com.rsav.githubPublicRepoBrowser.ui.preview.SampleRepoProvider
@@ -62,9 +63,14 @@ fun RepoCard(
                     Text(
                         text = repo.description,
                         style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 2,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                     )
+                }
+
+                if (!repo.createdAt.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    FormattedDate(isoDate = repo.createdAt)
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

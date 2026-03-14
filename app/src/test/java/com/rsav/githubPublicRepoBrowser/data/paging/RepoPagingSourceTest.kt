@@ -164,6 +164,7 @@ class RepoPagingSourceTest {
                 avatarUrl = "https://github.com/owner.png",
                 __typename = "Organization"
             ),
+            createdAt = "2020-01-15T10:30:00Z",
         )
     }
 }

@@ -6,13 +6,13 @@ import androidx.paging.PagingData
 import com.rsav.githubPublicRepoBrowser.data.paging.RepoPagingSource
 import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
-import com.rsav.githubPublicRepoBrowser.domain.repository.RepoRepository
+import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class RepoRepositoryImpl @Inject constructor(
+class SearchRepositoriesImpl @Inject constructor(
     private val dataSource: ApolloRepoDataSource,
-) : RepoRepository {
+) : ISearchRepositories {
 
     override fun searchRepositories(query: String): Flow<PagingData<Repo>> {
         return Pager(

@@ -2,12 +2,31 @@ package com.rsav.githubPublicRepoBrowser.data.remote
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
+import com.rsav.githubPublicRepoBrowser.RepositoryDetailsQuery
 import com.rsav.githubPublicRepoBrowser.SearchRepositoriesQuery
 import javax.inject.Inject
 
 class ApolloRepoDataSource @Inject constructor(
     private val apolloClient: ApolloClient,
 ) {
+    suspend fun getRepositoryReadme(
+        owner: String,
+        name: String,
+    ): RepositoryDetailsQuery.Data {
+        val response = apolloClient.query(
+            RepositoryDetailsQuery(
+                owner = owner,
+                name = name,
+            )
+        ).execute()
+        if (response.hasErrors()) {
+            throw ApolloQueryException(
+                response.errors?.firstOrNull()?.message ?: "Unknown GraphQL error"
+            )
+        }
+        return response.data ?: throw ApolloQueryException("No data returned")
+    }
+
     suspend fun searchRepositories(
         query: String,
         first: Int,

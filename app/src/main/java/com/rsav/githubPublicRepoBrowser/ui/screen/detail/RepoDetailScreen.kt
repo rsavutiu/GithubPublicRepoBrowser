@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,12 +14,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -28,37 +28,64 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import android.content.Intent
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.net.toUri
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.FormattedDate
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.MarkdownWebView
 import com.rsav.githubPublicRepoBrowser.ui.components.molecules.RepoStats
 import com.rsav.githubPublicRepoBrowser.ui.preview.SampleRepoProvider
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 
-// TODO: lower to 300 after confirming the movement works
 private const val SHARED_ANIM_MS = 1000
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun RepoDetailScreen(
-    repo: Repo,
-    onBack: () -> Unit,
-    onOpenUrl: (String) -> Unit,
     modifier: Modifier = Modifier,
+    repo: Repo,
+    detailsViewModel: RepoDetailsViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit = {},
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
 ) {
+    val uiState by detailsViewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        detailsViewModel.onIntent(DetailIntent.LoadDetails(name = repo.name, owner = repo.ownerLogin))
+    }
+
+    LaunchedEffect(Unit) {
+        detailsViewModel.sideEffects.collect { effect ->
+            when (effect) {
+                is DetailSideEffect.OpenBrowser -> {
+                    val intent = Intent(Intent.ACTION_VIEW, effect.url.toUri())
+                    context.startActivity(intent)
+                }
+                is DetailSideEffect.NavigateBack -> onNavigateBack()
+            }
+        }
+    }
+
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(repo.name) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { detailsViewModel.onIntent(DetailIntent.NavigateBack) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
@@ -72,10 +99,10 @@ fun RepoDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(horizontal = 16.dp),
         ) {
-            // Owner section
+            // Fixed header — Owner section
+            Spacer(modifier = Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 repo.ownerAvatarUrl?.let {
                     val avatarModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
@@ -127,10 +154,7 @@ fun RepoDetailScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(16.dp))
 
-            // Description
             if (!repo.description.isNullOrBlank()) {
                 Text(
                     text = repo.description,
@@ -139,7 +163,6 @@ fun RepoDetailScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Stats
             RepoStats(
                 starCount = repo.stargazerCount,
                 forkCount = repo.forkCount,
@@ -147,11 +170,64 @@ fun RepoDetailScreen(
                 languageColor = repo.languageColor,
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            if (!repo.createdAt.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                FormattedDate(
+                    isoDate = repo.createdAt,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
 
-            // Open on GitHub button
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider()
+
+            // Scrollable middle — readme content
+            when {
+                uiState.isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                uiState.error != null -> {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = uiState.error!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                    }
+                }
+
+                !uiState.readmeHtml.isNullOrEmpty() -> {
+                    MarkdownWebView(
+                        html = uiState.readmeHtml!!,
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                    )
+                }
+
+                else -> {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+
+            // Fixed footer — Open on GitHub button
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
             Button(
-                onClick = { onOpenUrl(repo.url) },
+                onClick = { detailsViewModel.onIntent(DetailIntent.OpenUrl(repo.url)) },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(
@@ -161,6 +237,7 @@ fun RepoDetailScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Open on GitHub")
             }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -173,8 +250,6 @@ private fun RepoDetailScreenPreview(
     MyApplicationTheme {
         RepoDetailScreen(
             repo = repo,
-            onBack = {},
-            onOpenUrl = {},
         )
     }
 }

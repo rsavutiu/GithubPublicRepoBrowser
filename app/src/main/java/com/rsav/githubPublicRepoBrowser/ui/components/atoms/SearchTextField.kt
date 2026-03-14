@@ -9,6 +9,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
@@ -21,6 +22,8 @@ fun SearchTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "Search GitHub repos by programming language",
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -33,7 +36,10 @@ fun SearchTextField(
         },
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+        keyboardActions = KeyboardActions(onSearch = {
+            keyboardController?.hide()
+            onSearch()
+        }),
         modifier = modifier,
     )
 }

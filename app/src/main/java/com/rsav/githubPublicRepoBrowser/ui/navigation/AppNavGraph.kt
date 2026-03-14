@@ -1,17 +1,12 @@
 package com.rsav.githubPublicRepoBrowser.ui.navigation
 
-import android.content.Intent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.core.net.toUri
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -28,7 +23,6 @@ private const val FADE_DURATION_MS = 1000
 @Composable
 fun AppNavGraph(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
-    val context = LocalContext.current
 
     SharedTransitionLayout {
         NavHost(
@@ -41,7 +35,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 popEnterTransition = { fadeIn(tween(FADE_DURATION_MS)) },
             ) {
                 RepoSearchScreen(
-                    onRepoClick = { repo ->
+                    onNavigateToDetail = { repo ->
                         val json = Json.encodeToString(Repo.serializer(), repo)
                         navController.navigate(DetailRoute(repoJson = json))
                     },
@@ -60,11 +54,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
 
                 RepoDetailScreen(
                     repo = repo,
-                    onBack = { navController.navigateUp() },
-                    onOpenUrl = { url ->
-                        val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                        context.startActivity(intent)
-                    },
+                    onNavigateBack = { navController.navigateUp() },
                     modifier = modifier,
                     animatedVisibilityScope = this@composable,
                     sharedTransitionScope = this@SharedTransitionLayout,

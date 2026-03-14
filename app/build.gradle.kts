@@ -21,7 +21,7 @@ android {
 
     defaultConfig {
         applicationId = "com.rsav.githubPublicRepoBrowser"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -59,6 +59,8 @@ kotlin {
 apollo {
     service("service") {
         packageName.set("com.rsav.githubPublicRepoBrowser")
+        mapScalar("DateTime", "kotlin.String")
+        mapScalar("URI", "kotlin.String")
         introspection {
             endpointUrl.set("https://api.github.com/graphql")
             headers.put("Authorization", "Bearer ${System.getenv("GITHUB_TOKEN")}")
@@ -82,6 +84,8 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.animation)
+    implementation(libs.commonmark)
+
 
     // Immutable Collections (Compose stability)
     implementation(libs.kotlinx.collections.immutable)

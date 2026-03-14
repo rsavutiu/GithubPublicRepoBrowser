@@ -32,7 +32,7 @@ import com.rsav.githubPublicRepoBrowser.ui.components.organisms.RepoList
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepoSearchScreen(
-    onRepoClick: (Repo) -> Unit,
+    onNavigateToDetail: (Repo) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RepoSearchViewModel = hiltViewModel(),
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
@@ -45,7 +45,7 @@ fun RepoSearchScreen(
         viewModel.sideEffects.collect { sideEffect ->
             when (sideEffect) {
                 is SearchSideEffect.NavigateToDetail -> {
-                    onRepoClick(sideEffect.repo)
+                    onNavigateToDetail(sideEffect.repo)
                 }
             }
         }
@@ -125,6 +125,6 @@ fun RepoSearchScreen(
 @Composable
 private fun RepoSearchScreenPreview() {
     RepoSearchScreen(
-        onRepoClick = {}
+        onNavigateToDetail = {}
     )
 }

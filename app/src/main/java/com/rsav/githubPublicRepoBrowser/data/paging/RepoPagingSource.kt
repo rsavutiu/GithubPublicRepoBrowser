@@ -20,9 +20,7 @@ class RepoPagingSource(
                 after = cursor,
             )
 
-            val repos = data.search.nodes?.mapNotNull { node ->
-                node?.onRepository?.toDomainModel()
-            } ?: emptyList()
+            val repos = data.search.nodes?.mapNotNull { node -> node?.onRepository?.toDomainModel() } ?: emptyList()
 
             val pageInfo = data.search.pageInfo
 
