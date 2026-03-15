@@ -20,12 +20,13 @@ import javax.inject.Inject
 @HiltViewModel
 class RepoDetailsViewModel @Inject constructor(
     private val getRepoDetailsUseCase: GetRepoDetailsUseCase,
+    private val parser: Parser,
+    private val htmlRenderer: HtmlRenderer,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DetailUiState())
     val uiState: StateFlow<DetailUiState> = _uiState.asStateFlow()
-    val parser: Parser? = Parser.builder().build()
-    val htmlRenderer: HtmlRenderer? = HtmlRenderer.builder().build()
+
     private val _sideEffects = Channel<DetailSideEffect>(Channel.BUFFERED)
     val sideEffects = _sideEffects.receiveAsFlow()
 
@@ -52,8 +53,8 @@ class RepoDetailsViewModel @Inject constructor(
 
     private fun markdownToHtml(markdown: String?): String? {
         if (markdown.isNullOrBlank()) return null
-        val document = parser?.parse(markdown)
-        return htmlRenderer?.render(document)
+        val document = parser.parse(markdown)
+        return htmlRenderer.render(document)
     }
 
     private fun reduceSideEffect(effect: DetailSideEffect) {
