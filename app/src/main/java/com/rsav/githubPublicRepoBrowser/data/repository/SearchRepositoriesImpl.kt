@@ -7,6 +7,7 @@ import com.rsav.githubPublicRepoBrowser.data.paging.RepoPagingSource
 import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
+import com.rsav.githubPublicRepoBrowser.util.L
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -15,17 +16,22 @@ class SearchRepositoriesImpl @Inject constructor(
 ) : ISearchRepositories {
 
     override fun searchRepositories(query: String): Flow<PagingData<Repo>> {
+        L.d(TAG, "searchRepositories(query=$query, pageSize=$PAGE_SIZE)")
         return Pager(
             config = PagingConfig(
                 pageSize = PAGE_SIZE,
-                initialLoadSize = PAGE_SIZE,
+                initialLoadSize = INITIAL_LOAD_SIZE,
                 enablePlaceholders = false,
+                prefetchDistance = PREFETCH_DISTANCE,
             ),
             pagingSourceFactory = { RepoPagingSource(dataSource, query) },
         ).flow
     }
 
     companion object {
-        const val PAGE_SIZE = 20
+        private const val TAG = "SearchRepo"
+        const val PAGE_SIZE = 10
+        private const val INITIAL_LOAD_SIZE = 10
+        private const val PREFETCH_DISTANCE = 4
     }
 }

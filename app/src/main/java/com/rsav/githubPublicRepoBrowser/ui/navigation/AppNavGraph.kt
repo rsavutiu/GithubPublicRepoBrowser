@@ -14,10 +14,12 @@ import androidx.navigation.toRoute
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.screen.detail.RepoDetailScreen
 import com.rsav.githubPublicRepoBrowser.ui.screen.search.RepoSearchScreen
+import com.rsav.githubPublicRepoBrowser.util.L
 import kotlinx.serialization.json.Json
 
 //Maybe a bit too slow/long
 private const val FADE_DURATION_MS = 1000
+private const val TAG = "NavGraph"
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -34,8 +36,10 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 exitTransition = { fadeOut(tween(FADE_DURATION_MS)) },
                 popEnterTransition = { fadeIn(tween(FADE_DURATION_MS)) },
             ) {
+                L.d(TAG, "composable → SearchRoute")
                 RepoSearchScreen(
                     onNavigateToDetail = { repo ->
+                        L.d(TAG, "navigating to detail: ${repo.nameWithOwner}")
                         val json = Json.encodeToString<Repo>(repo)
                         navController.navigate(DetailRoute(repoJson = json))
                     },
@@ -51,10 +55,14 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
             ) { backStackEntry ->
                 val route = backStackEntry.toRoute<DetailRoute>()
                 val repo = Json.decodeFromString<Repo>(route.repoJson)
+                L.d(TAG, "composable → DetailRoute for ${repo.nameWithOwner} \n readme: ${repo.readmeText}")
 
                 RepoDetailScreen(
                     repo = repo,
-                    onNavigateBack = { navController.navigateUp() },
+                    onNavigateBack = {
+                        L.d(TAG, "navigateUp from detail")
+                        navController.navigateUp()
+                    },
                     modifier = modifier,
                     animatedVisibilityScope = this@composable,
                     sharedTransitionScope = this@SharedTransitionLayout,

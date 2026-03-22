@@ -1,8 +1,10 @@
 package com.rsav.githubPublicRepoBrowser.di
 
+import com.rsav.githubPublicRepoBrowser.data.local.SavedSearchDataStore
 import com.rsav.githubPublicRepoBrowser.data.repository.RepositoryDetailsImpl
 import com.rsav.githubPublicRepoBrowser.data.repository.SearchRepositoriesImpl
 import com.rsav.githubPublicRepoBrowser.domain.repository.IRepositoryDetails
+import com.rsav.githubPublicRepoBrowser.domain.repository.ISavedSearchRepository
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
 import dagger.Binds
 import dagger.Module
@@ -21,4 +23,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindRepositoryDetails(impl: RepositoryDetailsImpl): IRepositoryDetails
+
+    @Binds
+    @Singleton
+    abstract fun bindSavedSearchRepository(impl: SavedSearchDataStore): ISavedSearchRepository
 }

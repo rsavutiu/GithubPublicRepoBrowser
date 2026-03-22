@@ -13,6 +13,7 @@ data class DetailUiState(
     val readmeHtml: String? = null,
     val isLoading: Boolean = false,
     val error: String? = null,
+    val weeklyCommits: List<Int> = emptyList(),
 )
 
 sealed interface DetailSideEffect {

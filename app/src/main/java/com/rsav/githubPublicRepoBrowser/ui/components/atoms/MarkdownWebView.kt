@@ -1,6 +1,5 @@
 package com.rsav.githubPublicRepoBrowser.ui.components.atoms
 
-import android.graphics.Color as AndroidColor
 import android.webkit.WebView
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -8,12 +7,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
+import com.rsav.githubPublicRepoBrowser.util.L
+import android.graphics.Color as AndroidColor
+
+private const val TAG = "MarkdownWebView"
 
 @Composable
 fun MarkdownWebView(
     html: String,
     modifier: Modifier = Modifier,
+    onScrollChanged: (scrollY: Int) -> Unit = {},
 ) {
+    L.d(TAG, "composing — html length=${html.length}")
+
     val textColor = MaterialTheme.colorScheme.onSurface.toArgb().toHexColor()
     val bgColor = MaterialTheme.colorScheme.surface.toArgb().toHexColor()
     val linkColor = MaterialTheme.colorScheme.primary.toArgb().toHexColor()
@@ -26,13 +32,20 @@ fun MarkdownWebView(
     AndroidView(
         modifier = modifier,
         factory = { context ->
+            L.d(TAG, "factory — creating WebView")
             WebView(context).apply {
                 setBackgroundColor(AndroidColor.TRANSPARENT)
                 settings.defaultFontSize = 14
+                settings.loadsImagesAutomatically = true
+                settings.blockNetworkImage = false
                 isVerticalScrollBarEnabled = false
+                setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                    onScrollChanged(scrollY)
+                }
             }
         },
         update = { webView ->
+            L.d(TAG, "update — loading ${styledHtml.length} chars into WebView")
             webView.loadDataWithBaseURL(null, styledHtml, "text/html", "UTF-8", null)
         },
     )

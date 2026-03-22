@@ -2,13 +2,19 @@ package com.rsav.githubPublicRepoBrowser.data.mapper
 
 import com.rsav.githubPublicRepoBrowser.SearchRepositoriesQuery
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
+import com.rsav.githubPublicRepoBrowser.util.L
+
+private const val TAG = "RepoMapper"
+
+private const val MAX_DESCRIPTION_LENGTH = 300
 
 fun SearchRepositoriesQuery.OnRepository.toDomainModel(): Repo {
+    L.d(TAG, "mapping $nameWithOwner — stars=$stargazerCount, forks=$forkCount, lang=${primaryLanguage?.name}, descLen=${description?.length ?: 0}")
     return Repo(
         id = id,
         name = name,
         nameWithOwner = nameWithOwner,
-        description = description,
+        description = description?.take(MAX_DESCRIPTION_LENGTH),
         url = url,
         stargazerCount = stargazerCount,
         forkCount = forkCount,

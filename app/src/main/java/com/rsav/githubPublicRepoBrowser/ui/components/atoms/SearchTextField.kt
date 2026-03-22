@@ -16,11 +16,11 @@ import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 
 @Composable
 fun SearchTextField(
+    modifier: Modifier = Modifier,
     value: String,
     onValueChange: (String) -> Unit,
     onSearch: () -> Unit,
-    modifier: Modifier = Modifier,
-    placeholder: String = "Search GitHub repos by programming language",
+    placeholder: String,
 ) {
     val focusManager = LocalFocusManager.current
 
@@ -52,6 +52,7 @@ private fun SearchTextFieldPreview() {
             value = "kotlin",
             onValueChange = {},
             onSearch = {},
+            placeholder = "Filter GitHub repos by programming language"
         )
     }
 }

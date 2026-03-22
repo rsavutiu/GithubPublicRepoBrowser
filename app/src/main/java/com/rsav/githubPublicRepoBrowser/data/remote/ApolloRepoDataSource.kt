@@ -4,6 +4,7 @@ import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import com.rsav.githubPublicRepoBrowser.RepositoryDetailsQuery
 import com.rsav.githubPublicRepoBrowser.SearchRepositoriesQuery
+import com.rsav.githubPublicRepoBrowser.util.L
 import javax.inject.Inject
 
 class ApolloRepoDataSource @Inject constructor(
@@ -13,6 +14,7 @@ class ApolloRepoDataSource @Inject constructor(
         owner: String,
         name: String,
     ): RepositoryDetailsQuery.Data {
+        L.d(TAG, "getRepositoryReadme(owner=$owner, name=$name)")
         val response = apolloClient.query(
             RepositoryDetailsQuery(
                 owner = owner,
@@ -20,11 +22,15 @@ class ApolloRepoDataSource @Inject constructor(
             )
         ).execute()
         if (response.hasErrors()) {
-            throw ApolloQueryException(
-                response.errors?.firstOrNull()?.message ?: "Unknown GraphQL error"
-            )
+            val msg = response.errors?.firstOrNull()?.message ?: "Unknown GraphQL error"
+            L.e(TAG, "getRepositoryReadme ERROR: $msg")
+            throw ApolloQueryException(msg)
         }
-        return response.data ?: throw ApolloQueryException("No data returned")
+        val data = response.data ?: throw ApolloQueryException("No data returned").also {
+            L.e(TAG, "getRepositoryReadme — null data")
+        }
+        L.d(TAG, "getRepositoryReadme OK — hasRepo=${data.repository != null}")
+        return data
     }
 
     suspend fun searchRepositories(
@@ -32,6 +38,7 @@ class ApolloRepoDataSource @Inject constructor(
         first: Int,
         after: String? = null,
     ): SearchRepositoriesQuery.Data {
+        L.d(TAG, "searchRepositories(query=$query, first=$first, after=$after)")
         val response = apolloClient.query(
             SearchRepositoriesQuery(
                 query = query,
@@ -41,12 +48,21 @@ class ApolloRepoDataSource @Inject constructor(
         ).execute()
 
         if (response.hasErrors()) {
-            throw ApolloQueryException(
-                response.errors?.firstOrNull()?.message ?: "Unknown GraphQL error"
-            )
+            val msg = response.errors?.firstOrNull()?.message ?: "Unknown GraphQL error"
+            L.e(TAG, "searchRepositories ERROR: $msg")
+            throw ApolloQueryException(msg)
         }
 
-        return response.data ?: throw ApolloQueryException("No data returned")
+        val data = response.data ?: throw ApolloQueryException("No data returned").also {
+            L.e(TAG, "searchRepositories — null data")
+        }
+        val count = data.search.nodes?.size ?: 0
+        L.d(TAG, "searchRepositories OK — $count nodes, hasNext=${data.search.pageInfo.hasNextPage}, endCursor=${data.search.pageInfo.endCursor}")
+        return data
+    }
+
+    companion object {
+        private const val TAG = "DataSource"
     }
 }
 

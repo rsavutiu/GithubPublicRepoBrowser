@@ -109,6 +109,8 @@ class RepoMapperTest {
                 avatarUrl = "https://github.com/$ownerLogin.png",
                 __typename = "Organisation"
             ),
+            createdAt = "2024-01-01T00:00:00Z",
+            updatedAt = "2024-06-01T00:00:00Z",
         )
     }
 }

@@ -48,6 +48,10 @@ android {
         compose = true
         buildConfig = true
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 kotlin {
@@ -90,12 +94,18 @@ dependencies {
     // Immutable Collections (Compose stability)
     implementation(libs.kotlinx.collections.immutable)
 
+    // Networking
+    implementation(libs.okhttp.logging.interceptor)
+
     // Apollo GraphQL
     implementation(libs.apollo.runtime)
 
     //Coil
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
 
     // Paging 3
     implementation(libs.androidx.paging.runtime)

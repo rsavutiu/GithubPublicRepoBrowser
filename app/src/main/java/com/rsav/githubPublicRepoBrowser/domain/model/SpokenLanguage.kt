@@ -1,0 +1,43 @@
+package com.rsav.githubPublicRepoBrowser.domain.model
+
+data class SpokenLanguage(
+    val name: String,
+    val code: String,
+)
+
+val SPOKEN_LANGUAGES: List<SpokenLanguage> = listOf(
+    SpokenLanguage("Arabic", "ar"),
+    SpokenLanguage("Bengali", "bn"),
+    SpokenLanguage("Chinese (Simplified)", "zh"),
+    SpokenLanguage("Chinese (Traditional)", "zh-Hant"),
+    SpokenLanguage("Czech", "cs"),
+    SpokenLanguage("Danish", "da"),
+    SpokenLanguage("Dutch", "nl"),
+    SpokenLanguage("English", "en"),
+    SpokenLanguage("Finnish", "fi"),
+    SpokenLanguage("French", "fr"),
+    SpokenLanguage("German", "de"),
+    SpokenLanguage("Greek", "el"),
+    SpokenLanguage("Hebrew", "he"),
+    SpokenLanguage("Hindi", "hi"),
+    SpokenLanguage("Hungarian", "hu"),
+    SpokenLanguage("Indonesian", "id"),
+    SpokenLanguage("Italian", "it"),
+    SpokenLanguage("Japanese", "ja"),
+    SpokenLanguage("Korean", "ko"),
+    SpokenLanguage("Malay", "ms"),
+    SpokenLanguage("Norwegian", "no"),
+    SpokenLanguage("Persian", "fa"),
+    SpokenLanguage("Polish", "pl"),
+    SpokenLanguage("Portuguese", "pt"),
+    SpokenLanguage("Romanian", "ro"),
+    SpokenLanguage("Russian", "ru"),
+    SpokenLanguage("Spanish", "es"),
+    SpokenLanguage("Swedish", "sv"),
+    SpokenLanguage("Tamil", "ta"),
+    SpokenLanguage("Thai", "th"),
+    SpokenLanguage("Turkish", "tr"),
+    SpokenLanguage("Ukrainian", "uk"),
+    SpokenLanguage("Urdu", "ur"),
+    SpokenLanguage("Vietnamese", "vi"),
+)

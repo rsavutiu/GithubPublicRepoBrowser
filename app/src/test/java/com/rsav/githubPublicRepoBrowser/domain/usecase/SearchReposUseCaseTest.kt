@@ -1,6 +1,8 @@
 package com.rsav.githubPublicRepoBrowser.domain.usecase
 
 import androidx.paging.PagingData
+import com.rsav.githubPublicRepoBrowser.domain.model.ProgrammingLanguage
+import com.rsav.githubPublicRepoBrowser.domain.model.TrendingPeriod
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
 import io.mockk.every
 import io.mockk.mockk
@@ -21,38 +23,59 @@ class SearchReposUseCaseTest {
     }
 
     @Test
-    fun `blank query uses default query`() {
-        every { repository.searchRepositories(SearchReposUseCase.DEFAULT_QUERY) } returns flowOf(PagingData.empty())
+    fun `blank query produces trending query with date and sort`() {
+        every { repository.searchRepositories(any()) } returns flowOf(PagingData.empty())
 
-        useCase("")
+        useCase(freeText = "")
 
-        verify { repository.searchRepositories(SearchReposUseCase.DEFAULT_QUERY) }
+        verify { repository.searchRepositories(match { it.contains("stars:>5") && it.contains("created:>") && it.contains("sort:stars") }) }
     }
 
     @Test
-    fun `whitespace-only query uses default query`() {
-        every { repository.searchRepositories(SearchReposUseCase.DEFAULT_QUERY) } returns flowOf(PagingData.empty())
+    fun `non-blank free text is included in query`() {
+        every { repository.searchRepositories(any()) } returns flowOf(PagingData.empty())
 
-        useCase("   ")
+        useCase(freeText = "android")
 
-        verify { repository.searchRepositories(SearchReposUseCase.DEFAULT_QUERY) }
+        verify { repository.searchRepositories(match { it.contains("android") && it.contains("sort:stars") }) }
     }
 
     @Test
-    fun `query is trimmed before delegating to repository`() {
-        every { repository.searchRepositories("kotlin") } returns flowOf(PagingData.empty())
+    fun `programming language adds language qualifier`() {
+        every { repository.searchRepositories(any()) } returns flowOf(PagingData.empty())
 
-        useCase("  kotlin  ")
+        useCase(freeText = "", programmingLanguage = ProgrammingLanguage("Kotlin"))
 
-        verify { repository.searchRepositories("kotlin") }
+        verify { repository.searchRepositories(match { it.contains("language:Kotlin") }) }
     }
 
     @Test
-    fun `non-blank query delegates to repository`() {
-        every { repository.searchRepositories("kotlin") } returns flowOf(PagingData.empty())
+    fun `buildQuery combines all filters`() {
+        val query = SearchReposUseCase.buildQuery(
+            freeText = "server",
+            trendingPeriod = TrendingPeriod.THIS_WEEK,
+            programmingLanguage = ProgrammingLanguage("Go"),
+            spokenLanguage = null,
+        )
 
-        useCase("kotlin")
+        assert(query.contains("server"))
+        assert(query.contains("language:Go"))
+        assert(query.contains("sort:stars"))
+        // Free text present → no date filter
+        assert(!query.contains("created:>"))
+    }
 
-        verify { repository.searchRepositories("kotlin") }
+    @Test
+    fun `buildQuery without free text includes date filter`() {
+        val query = SearchReposUseCase.buildQuery(
+            freeText = "",
+            trendingPeriod = TrendingPeriod.TODAY,
+            programmingLanguage = null,
+            spokenLanguage = null,
+        )
+
+        assert(query.contains("stars:>5"))
+        assert(query.contains("created:>"))
+        assert(query.contains("sort:stars"))
     }
 }
