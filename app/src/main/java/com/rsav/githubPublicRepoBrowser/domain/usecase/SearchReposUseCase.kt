@@ -18,8 +18,9 @@ class SearchReposUseCase @Inject constructor(
         trendingPeriod: TrendingPeriod? = TrendingPeriod.TODAY,
         programmingLanguage: ProgrammingLanguage? = null,
         spokenLanguage: SpokenLanguage? = null,
+        topic: String? = null,
     ): Flow<PagingData<Repo>> {
-        val query = buildQuery(freeText, trendingPeriod, programmingLanguage, spokenLanguage)
+        val query = buildQuery(freeText, trendingPeriod, programmingLanguage, spokenLanguage, topic)
         L.d(TAG, "invoke → query='$query'")
         return repository.searchRepositories(query)
     }
@@ -32,6 +33,7 @@ class SearchReposUseCase @Inject constructor(
             trendingPeriod: TrendingPeriod?,
             programmingLanguage: ProgrammingLanguage?,
             spokenLanguage: SpokenLanguage?,
+            topic: String? = null,
         ): String {
             val parts = mutableListOf<String>()
 
@@ -40,6 +42,7 @@ class SearchReposUseCase @Inject constructor(
                 parts.add(text)
             }
 
+            topic?.let { parts.add("topic:$it") }
             programmingLanguage?.let { parts.add("language:${it.queryValue}") }
 
             // Spoken language — GitHub search doesn't have a qualifier for this,

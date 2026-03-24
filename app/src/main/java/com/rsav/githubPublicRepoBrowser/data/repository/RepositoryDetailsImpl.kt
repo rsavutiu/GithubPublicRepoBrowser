@@ -20,8 +20,13 @@ class RepositoryDetailsImpl @Inject constructor(
             L.w(TAG, "repository is null for $owner/$name")
             return null
         }
-        val readme = repo.readmeUpper?.onBlob?.text ?: repo.readmeLower?.onBlob?.text
-        L.d(TAG, "readme resolved — variant=${if (repo.readmeUpper?.onBlob?.text != null) "UPPER" else if (readme != null) "LOWER" else "NONE"}, length=${readme?.length ?: 0}")
+        val readme = repo.readmeUpper?.onBlob?.text
+            ?: repo.readmeLower?.onBlob?.text
+            ?: repo.readmeAllCaps?.onBlob?.text
+            ?: repo.readmeMixed?.onBlob?.text
+            ?: repo.readmeNoExt?.onBlob?.text
+            ?: repo.readmeRst?.onBlob?.text
+        L.d(TAG, "readme resolved — length=${readme?.length ?: 0}")
         return readme
     }
 

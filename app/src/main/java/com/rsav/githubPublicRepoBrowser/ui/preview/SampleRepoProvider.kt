@@ -21,6 +21,7 @@ val sampleRepos = persistentListOf(
         ownerType = "Organization",
         createdAt = "2019-07-11T18:33:40Z",
         updatedAt = "2019-08-11T18:33:40Z",
+        topics = listOf("android", "jetpack-compose", "material-design"),
     ),
     Repo(
         id = "2",
@@ -36,6 +37,7 @@ val sampleRepos = persistentListOf(
         ownerAvatarUrl = "https://avatars.githubusercontent.com/u/82592",
         createdAt = "2013-01-07T20:09:44Z",
         updatedAt = "2019-07-11T18:33:40Z",
+        topics = listOf("http", "rest-api", "android"),
     ),
     Repo(
         id = "3",

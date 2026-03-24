@@ -1,26 +1,36 @@
 package com.rsav.githubPublicRepoBrowser.ui.screen.detail
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,18 +38,15 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -55,45 +62,26 @@ import com.rsav.githubPublicRepoBrowser.ui.components.atoms.Sparkline
 import com.rsav.githubPublicRepoBrowser.ui.components.molecules.RepoStats
 import com.rsav.githubPublicRepoBrowser.ui.preview.SampleRepoProvider
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
-import kotlin.math.roundToInt
 
 private const val SHARED_ANIM_MS = 1000
-private const val PARALLAX_FACTOR = 0.5f
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun RepoDetailScreen(
     modifier: Modifier = Modifier,
     repo: Repo,
     detailsViewModel: RepoDetailsViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit = {},
+    onTopicClick: (String) -> Unit = {},
+    onOwnerClick: (String) -> Unit = {},
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
 ) {
     val uiState by detailsViewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    val headerHeightPx = remember { mutableIntStateOf(0) }
-    val webViewScrollY = remember { mutableIntStateOf(0) }
-    val animatedCollapse = remember { Animatable(0f) }
-
-    // Smooth the raw scroll into the animated collapse value
-    LaunchedEffect(webViewScrollY.intValue, headerHeightPx.intValue) {
-        val maxCollapse = headerHeightPx.intValue.toFloat()
-        if (maxCollapse <= 0f) return@LaunchedEffect
-        val target = webViewScrollY.intValue
-            .toFloat()
-            .coerceIn(0f, maxCollapse)
-        animatedCollapse.animateTo(
-            targetValue = target,
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow,
-            ),
-        )
-    }
-
     LaunchedEffect(Unit) {
+        detailsViewModel.setRepo(repo)
         detailsViewModel.onIntent(DetailIntent.LoadDetails(name = repo.name, owner = repo.ownerLogin))
     }
 
@@ -105,6 +93,9 @@ fun RepoDetailScreen(
                     context.startActivity(intent)
                 }
                 is DetailSideEffect.NavigateBack -> onNavigateBack()
+                is DetailSideEffect.AskClaude -> {
+                    launchClaudeIntent(context, effect.prompt)
+                }
             }
         }
     }
@@ -124,144 +115,175 @@ fun RepoDetailScreen(
                 },
             )
         },
+        bottomBar = {
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .navigationBarsPadding(),
+            ) {
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Button(
+                        onClick = { detailsViewModel.onIntent(DetailIntent.OpenUrl(repo.url)) },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.OpenInBrowser,
+                            contentDescription = null,
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("GitHub")
+                    }
+                    OutlinedButton(
+                        onClick = { detailsViewModel.onIntent(DetailIntent.AskClaude) },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Ask Claude")
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        },
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
         ) {
-            // Collapsing parallax header — driven by WebView scroll position
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clipToBounds()
-                    .layout { measurable, constraints ->
-                        val placeable = measurable.measure(constraints)
-                        if (headerHeightPx.intValue == 0) {
-                            headerHeightPx.intValue = placeable.height
-                        }
-                        val collapse = animatedCollapse.value
-                        val visibleHeight = (placeable.height - collapse)
-                            .roundToInt()
-                            .coerceAtLeast(0)
-                        layout(placeable.width, visibleHeight) {
-                            placeable.place(
-                                x = 0,
-                                y = (-collapse * PARALLAX_FACTOR).roundToInt(),
-                            )
-                        }
-                    },
-            ) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    repo.ownerAvatarUrl?.let {
-                        val avatarModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                            with(sharedTransitionScope) {
-                                Modifier
-                                    .sharedBounds(
-                                        sharedContentState = rememberSharedContentState(key = "avatar-${repo.id}"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                        boundsTransform = { _, _ -> tween(SHARED_ANIM_MS) },
-                                    )
-                                    .size(72.dp)
-                            }
-                        } else {
-                            Modifier.size(72.dp)
-                        }
-
-                        GithubAvatar(
-                            url = it,
-                            modifier = avatarModifier,
-                            isOrganization = repo.ownerType == "Organization",
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        val nameModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                            with(sharedTransitionScope) {
-                                Modifier.sharedBounds(
-                                    sharedContentState = rememberSharedContentState(key = "name-${repo.id}"),
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                repo.ownerAvatarUrl?.let {
+                    val avatarModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                        with(sharedTransitionScope) {
+                            Modifier
+                                .sharedBounds(
+                                    sharedContentState = rememberSharedContentState(key = "avatar-${repo.id}"),
                                     animatedVisibilityScope = animatedVisibilityScope,
                                     boundsTransform = { _, _ -> tween(SHARED_ANIM_MS) },
                                 )
-                            }
-                        } else {
-                            Modifier
+                                .size(72.dp)
                         }
-
-                        Text(
-                            modifier = nameModifier,
-                            text = repo.nameWithOwner,
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        Text(
-                            text = repo.ownerLogin,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    } else {
+                        Modifier.size(72.dp)
                     }
+
+                    GithubAvatar(
+                        url = it,
+                        modifier = avatarModifier,
+                        isOrganization = repo.ownerType == "Organization",
+                    )
                 }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    val nameModifier = if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                        with(sharedTransitionScope) {
+                            Modifier.sharedBounds(
+                                sharedContentState = rememberSharedContentState(key = "name-${repo.id}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                boundsTransform = { _, _ -> tween(SHARED_ANIM_MS) },
+                            )
+                        }
+                    } else {
+                        Modifier
+                    }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                if (!repo.description.isNullOrBlank()) {
                     Text(
-                        text = repo.description,
+                        modifier = nameModifier,
+                        text = repo.nameWithOwner,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Text(
+                        text = repo.ownerLogin,
                         style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { onOwnerClick(repo.ownerLogin) },
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
                 }
+            }
 
-                RepoStats(
-                    starCount = repo.stargazerCount,
-                    forkCount = repo.forkCount,
-                    language = repo.languageName,
-                    languageColor = repo.languageColor,
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (!repo.description.isNullOrBlank()) {
+                Text(
+                    text = repo.description,
+                    style = MaterialTheme.typography.bodyLarge,
                 )
-
-                if (!repo.createdAt.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    FormattedDate(
-                        isoDate = repo.createdAt,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-
-                if (!repo.updatedAt.isNullOrBlank()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    FormattedDate(prefix = "Last Update at:", isoDate = repo.updatedAt)
-                }
-
-                if (uiState.weeklyCommits.size >= 2) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Commit activity (last year)",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Sparkline(
-                        data = uiState.weeklyCommits,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(140.dp),
-                    )
-                }
-
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
+            RepoStats(
+                starCount = repo.stargazerCount,
+                forkCount = repo.forkCount,
+                language = repo.languageName,
+                languageColor = repo.languageColor,
+            )
+
+            if (repo.topics.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    repo.topics.forEach { topic ->
+                        AssistChip(
+                            onClick = { onTopicClick(topic) },
+                            label = { Text(topic, style = MaterialTheme.typography.labelSmall) },
+                        )
+                    }
+                }
+            }
+
+            if (!repo.createdAt.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                FormattedDate(
+                    isoDate = repo.createdAt,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+
+            if (!repo.updatedAt.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                FormattedDate(prefix = "Last Update at:", isoDate = repo.updatedAt)
+            }
+
+            if (uiState.weeklyCommits.size >= 2) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Commit activity (last ${uiState.weeklyCommits.size} weeks)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Sparkline(
+                    data = uiState.weeklyCommits,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp),
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider()
 
-            // Scrollable middle — readme content
+            // Readme content
             when {
                 uiState.isLoading -> {
                     Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .height(200.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator()
@@ -271,8 +293,8 @@ fun RepoDetailScreen(
                 uiState.error != null -> {
                     Box(
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
@@ -286,34 +308,39 @@ fun RepoDetailScreen(
                 !uiState.readmeHtml.isNullOrEmpty() -> {
                     MarkdownWebView(
                         html = uiState.readmeHtml!!,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        onScrollChanged = { webViewScrollY.intValue = it },
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
-
-                else -> {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
             }
-
-            // Fixed footer — Open on GitHub button
-            HorizontalDivider()
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = { detailsViewModel.onIntent(DetailIntent.OpenUrl(repo.url)) },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.OpenInBrowser,
-                    contentDescription = null,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Open on GitHub")
-            }
-            Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+}
+
+private fun launchClaudeIntent(context: Context, prompt: String) {
+    // Try Claude app first via share intent
+    val claudePackage = "com.anthropic.claude"
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, prompt)
+        setPackage(claudePackage)
+    }
+    try {
+        context.startActivity(shareIntent)
+        return
+    } catch (_: Exception) {
+        // Claude app not installed, fall through
+    }
+
+    // Fallback: copy to clipboard and open claude.ai in browser
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    clipboard.setPrimaryClip(ClipData.newPlainText("Claude prompt", prompt))
+
+    val browserIntent = Intent(Intent.ACTION_VIEW, "https://claude.ai/new".toUri())
+    try {
+        context.startActivity(browserIntent)
+        Toast.makeText(context, "Prompt copied! Paste it in Claude.", Toast.LENGTH_LONG).show()
+    } catch (_: Exception) {
+        Toast.makeText(context, "Prompt copied to clipboard.", Toast.LENGTH_SHORT).show()
     }
 }
 

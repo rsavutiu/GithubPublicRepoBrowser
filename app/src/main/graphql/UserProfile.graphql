@@ -1,0 +1,19 @@
+query UserProfile($login: String!) {
+    user(login: $login) {
+        login
+        name
+        avatarUrl
+        bio
+        company
+        location
+        followers {
+            totalCount
+        }
+        following {
+            totalCount
+        }
+        repositories {
+            totalCount
+        }
+    }
+}

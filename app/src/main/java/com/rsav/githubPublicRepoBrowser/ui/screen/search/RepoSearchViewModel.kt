@@ -38,6 +38,7 @@ private data class SearchParams(
     val trendingPeriod: TrendingPeriod? = TrendingPeriod.TODAY,
     val programmingLanguage: ProgrammingLanguage? = null,
     val spokenLanguage: SpokenLanguage? = null,
+    val topic: String? = null,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -65,6 +66,7 @@ class RepoSearchViewModel @Inject constructor(
                 trendingPeriod = params.trendingPeriod,
                 programmingLanguage = params.programmingLanguage,
                 spokenLanguage = params.spokenLanguage,
+                topic = params.topic,
             ).cachedIn(viewModelScope)
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, PagingData.empty())
@@ -83,12 +85,12 @@ class RepoSearchViewModel @Inject constructor(
     fun onIntent(intent: SearchIntent) {
         L.d(TAG, "onIntent: $intent")
         when (intent) {
-            is SearchIntent.QueryChanged -> reduceQueryChanged(intent.query)
+            is SearchIntent.QueryChanged -> handleQueryChanged(intent.query)
             is SearchIntent.Search -> emitSearch()
-            is SearchIntent.RepoClicked -> reduceRepoClicked(intent.repo)
-            is SearchIntent.TrendingPeriodChanged -> reduceTrendingPeriod(intent.period)
-            is SearchIntent.ProgrammingLanguageSelected -> reduceProgrammingLanguage(intent.language)
-            is SearchIntent.SpokenLanguageSelected -> reduceSpokenLanguage(intent.language)
+            is SearchIntent.RepoClicked -> handleRepoClicked(intent.repo)
+            is SearchIntent.TrendingPeriodChanged -> handleTrendingPeriod(intent.period)
+            is SearchIntent.ProgrammingLanguageSelected -> handleProgrammingLanguage(intent.language)
+            is SearchIntent.SpokenLanguageSelected -> handleSpokenLanguage(intent.language)
             is SearchIntent.ShowLanguagePicker -> _uiState.update { it.copy(showLanguagePicker = true) }
             is SearchIntent.ShowSpokenLanguagePicker -> _uiState.update { it.copy(showSpokenLanguagePicker = true) }
             is SearchIntent.DismissPicker -> _uiState.update {
@@ -101,6 +103,7 @@ class RepoSearchViewModel @Inject constructor(
             is SearchIntent.RequestDeleteSavedSearch -> _uiState.update { it.copy(savedSearchPendingDelete = intent.savedSearch) }
             is SearchIntent.ConfirmDeleteSavedSearch -> confirmDeleteSavedSearch()
             is SearchIntent.DismissDeleteSavedSearch -> _uiState.update { it.copy(savedSearchPendingDelete = null) }
+            is SearchIntent.TopicSelected -> handleTopic(intent.topic)
         }
     }
 
@@ -133,6 +136,7 @@ class RepoSearchViewModel @Inject constructor(
                 selectedSpokenLanguage = saved.spokenLanguageCode?.let { code ->
                     SPOKEN_LANGUAGES.find { it.code == code }
                 },
+                selectedTopic = null,
             )
         }
         emitSearch()
@@ -145,40 +149,46 @@ class RepoSearchViewModel @Inject constructor(
         viewModelScope.launch { savedSearchRepository.deleteSavedSearch(pending.id) }
     }
 
-    private fun reduceQueryChanged(query: String) {
+    private fun handleTopic(topic: String?) {
+        _uiState.update { it.copy(selectedTopic = topic) }
+        emitSearch()
+    }
+
+    private fun handleQueryChanged(query: String) {
         _uiState.update { it.copy(query = query) }
     }
 
     private fun emitSearch() {
         val state = _uiState.value
-        L.d(TAG, "emitSearch: query='${state.query}', period=${state.trendingPeriod}, lang=${state.selectedLanguage?.name}, spoken=${state.selectedSpokenLanguage?.name}")
+        L.d(TAG, "emitSearch: query='${state.query}', period=${state.trendingPeriod}, lang=${state.selectedLanguage?.name}, spoken=${state.selectedSpokenLanguage?.name}, topic=${state.selectedTopic}")
         _searchTrigger.tryEmit(
             SearchParams(
                 freeText = state.query,
                 trendingPeriod = state.trendingPeriod,
                 programmingLanguage = state.selectedLanguage,
                 spokenLanguage = state.selectedSpokenLanguage,
+                topic = state.selectedTopic,
             )
         )
     }
 
-    private fun reduceTrendingPeriod(period: TrendingPeriod?) {
+    private fun handleTrendingPeriod(period: TrendingPeriod?) {
         _uiState.update { it.copy(trendingPeriod = period) }
         emitSearch()
     }
 
-    private fun reduceProgrammingLanguage(language: ProgrammingLanguage?) {
+    private fun handleProgrammingLanguage(language: ProgrammingLanguage?) {
         _uiState.update { it.copy(selectedLanguage = language, showLanguagePicker = false) }
         emitSearch()
     }
 
-    private fun reduceSpokenLanguage(language: SpokenLanguage?) {
+    private fun handleSpokenLanguage(language: SpokenLanguage?) {
         _uiState.update { it.copy(selectedSpokenLanguage = language, showSpokenLanguagePicker = false) }
         emitSearch()
     }
 
-    private fun reduceRepoClicked(repo: Repo) {
-        L.d(TAG, "reduceRepoClicked: ${repo.nameWithOwner}")
+    private fun handleRepoClicked(repo: Repo) {
+        L.d(TAG, "handleRepoClicked: ${repo.nameWithOwner}")
         viewModelScope.launch {
             _sideEffects.send(SearchSideEffect.NavigateToDetail(repo))
         }

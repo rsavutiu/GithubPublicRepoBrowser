@@ -5,7 +5,8 @@ import java.time.LocalDate
 enum class TrendingPeriod(val label: String, private val daysBack: Int) {
     TODAY("Today", 1),
     THIS_WEEK("This week", 7),
-    THIS_MONTH("This month", 30);
+    THIS_MONTH("This month", 30),
+    THIS_YEAR("This year", 365);
 
     fun sinceDate(): String = LocalDate.now().minusDays(daysBack.toLong()).toString()
 }

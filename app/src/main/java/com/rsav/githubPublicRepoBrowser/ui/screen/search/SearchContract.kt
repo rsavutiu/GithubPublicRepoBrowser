@@ -24,12 +24,13 @@ sealed interface SearchIntent {
     data class RequestDeleteSavedSearch(val savedSearch: SavedSearch) : SearchIntent
     data object ConfirmDeleteSavedSearch : SearchIntent
     data object DismissDeleteSavedSearch : SearchIntent
+    data class TopicSelected(val topic: String?) : SearchIntent
 }
 
 @Immutable
 data class SearchUiState(
     val query: String = "",
-    val trendingPeriod: TrendingPeriod? = TrendingPeriod.TODAY,
+    val trendingPeriod: TrendingPeriod? = TrendingPeriod.THIS_WEEK,
     val selectedLanguage: ProgrammingLanguage? = null,
     val selectedSpokenLanguage: SpokenLanguage? = null,
     val showLanguagePicker: Boolean = false,
@@ -37,6 +38,7 @@ data class SearchUiState(
     val savedSearches: List<SavedSearch> = emptyList(),
     val showSaveSearchDialog: Boolean = false,
     val savedSearchPendingDelete: SavedSearch? = null,
+    val selectedTopic: String? = null,
 )
 
 sealed interface SearchSideEffect {

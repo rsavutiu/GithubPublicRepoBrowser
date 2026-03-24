@@ -29,6 +29,7 @@ fun RepoList(
     modifier: Modifier = Modifier,
     repos: LazyPagingItems<Repo>,
     onRepoClick: (Repo) -> Unit = {},
+    onTopicClick: (String) -> Unit = {},
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
 ) {
@@ -55,8 +56,9 @@ fun RepoList(
                     RepoCardSimple(
                         repo = repo,
                         onClick = onRepoClick,
+                        onTopicClick = onTopicClick,
                         animatedVisibilityScope = animatedVisibilityScope,
-                        sharedTransitionScope = sharedTransitionScope
+                        sharedTransitionScope = sharedTransitionScope,
                     )
                 }
             }

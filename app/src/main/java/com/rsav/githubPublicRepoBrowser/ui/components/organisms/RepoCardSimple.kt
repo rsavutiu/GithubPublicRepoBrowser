@@ -5,7 +5,10 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,18 +29,20 @@ import androidx.compose.ui.unit.dp
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.FormattedDate
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.RepoBadges
 import com.rsav.githubPublicRepoBrowser.ui.preview.SampleRepoProvider
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 
 private const val AVATAR_SIZE = 48
 private const val SHARED_ANIM_MS = 1000
 
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun RepoCardSimple(
     repo: Repo,
     onClick: (Repo) -> Unit,
     modifier: Modifier = Modifier,
+    onTopicClick: (String) -> Unit = {},
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
 ) {
@@ -112,6 +117,33 @@ fun RepoCardSimple(
             if (!repo.updatedAt.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 FormattedDate(prefix = "Last Update at: ", isoDate = repo.updatedAt)
+            }
+
+            RepoBadges(repo = repo)
+
+            if (repo.topics.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    maxLines = 1,
+                ) {
+                    repo.topics.forEachIndexed { index, topic ->
+                        if (index > 0) {
+                            Text(
+                                text = " \u00b7 ",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Text(
+                            text = topic,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.clickable { onTopicClick(topic) },
+                        )
+                    }
+                }
             }
         }
     }

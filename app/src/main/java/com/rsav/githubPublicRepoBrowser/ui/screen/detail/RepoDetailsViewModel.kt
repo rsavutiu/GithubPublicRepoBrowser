@@ -3,6 +3,7 @@ package com.rsav.githubPublicRepoBrowser.ui.screen.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rsav.githubPublicRepoBrowser.data.remote.SparklineDataSource
+import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.usecase.GetRepoDetailsUseCase
 import com.rsav.githubPublicRepoBrowser.util.L
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,17 +35,25 @@ class RepoDetailsViewModel @Inject constructor(
     private val _sideEffects = Channel<DetailSideEffect>(Channel.BUFFERED)
     val sideEffects = _sideEffects.receiveAsFlow()
 
+    private var currentRepo: Repo? = null
+    private var rawMarkdown: String? = null
+
+    fun setRepo(repo: Repo) {
+        currentRepo = repo
+    }
+
     fun onIntent(intent: DetailIntent) {
         L.d(TAG, "onIntent: $intent")
         when (intent) {
-            is DetailIntent.LoadDetails -> reduceLoadDetails(intent.name, intent.owner)
-            is DetailIntent.OpenUrl -> reduceSideEffect(DetailSideEffect.OpenBrowser(intent.url))
-            is DetailIntent.NavigateBack -> reduceSideEffect(DetailSideEffect.NavigateBack)
+            is DetailIntent.LoadDetails -> handleLoadDetails(intent.name, intent.owner)
+            is DetailIntent.OpenUrl -> handleSideEffect(DetailSideEffect.OpenBrowser(intent.url))
+            is DetailIntent.NavigateBack -> handleSideEffect(DetailSideEffect.NavigateBack)
+            is DetailIntent.AskClaude -> handleAskClaude()
         }
     }
 
-    private fun reduceLoadDetails(name: String, owner: String) {
-        L.d(TAG, "reduceLoadDetails(owner=$owner, name=$name)")
+    private fun handleLoadDetails(name: String, owner: String) {
+        L.d(TAG, "handleLoadDetails(owner=$owner, name=$name)")
         _uiState.update { it.copy(isLoading = true, error = null) }
         viewModelScope.launch {
             try {
@@ -54,20 +63,68 @@ class RepoDetailsViewModel @Inject constructor(
                 val markdown = readmeDeferred.await()
                 val weeklyCommits = sparklineDeferred.await()
 
+                rawMarkdown = markdown
                 L.d(TAG, "markdown fetched — ${markdown?.length ?: 0} chars")
-                if ((markdown?.length ?: 0) > 0)  L.d(TAG, "markdown:\n$markdown")
 
                 val html = withContext(Dispatchers.Default) {
                     markdownToHtml(markdown, owner, name)
                 }
                 L.d(TAG, "html rendered — ${html?.length ?: 0} chars")
-                if ((html?.length ?: 0) > 0)  L.d(TAG, "html:\n$html")
                 _uiState.update { it.copy(readmeHtml = html, isLoading = false, weeklyCommits = weeklyCommits) }
             } catch (e: Exception) {
-                L.e(TAG, "reduceLoadDetails FAILED: ${e.message}", e)
+                L.e(TAG, "handleLoadDetails FAILED: ${e.message}", e)
                 _uiState.update { it.copy(error = e.message, isLoading = false) }
             }
         }
+    }
+
+    private fun handleAskClaude() {
+        val repo = currentRepo ?: return
+        val prompt = buildClaudePrompt(repo, rawMarkdown)
+        handleSideEffect(DetailSideEffect.AskClaude(prompt))
+    }
+
+    private fun buildClaudePrompt(repo: Repo, readme: String?): String {
+        val sb = StringBuilder()
+        sb.appendLine("I'm evaluating this GitHub repository and would like your analysis:")
+        sb.appendLine()
+        sb.appendLine("Repository: ${repo.nameWithOwner}")
+        sb.appendLine("URL: ${repo.url}")
+        if (!repo.description.isNullOrBlank()) {
+            sb.appendLine("Description: ${repo.description}")
+        }
+        sb.appendLine("Stars: ${repo.stargazerCount} | Forks: ${repo.forkCount}")
+        if (!repo.languageName.isNullOrBlank()) {
+            sb.appendLine("Language: ${repo.languageName}")
+        }
+        if (repo.topics.isNotEmpty()) {
+            sb.appendLine("Topics: ${repo.topics.joinToString(", ")}")
+        }
+        if (!repo.createdAt.isNullOrBlank()) {
+            sb.appendLine("Created: ${repo.createdAt}")
+        }
+        if (!repo.updatedAt.isNullOrBlank()) {
+            sb.appendLine("Last updated: ${repo.updatedAt}")
+        }
+
+        // Include a trimmed README excerpt (keep it reasonable for sharing)
+        if (!readme.isNullOrBlank()) {
+            val trimmed = if (readme.length > 3000) readme.take(3000) + "\n[...truncated]" else readme
+            sb.appendLine()
+            sb.appendLine("--- README (excerpt) ---")
+            sb.appendLine(trimmed)
+            sb.appendLine("--- End README ---")
+        }
+
+        sb.appendLine()
+        sb.appendLine("Please provide:")
+        sb.appendLine("1. A concise summary of what this project does and who it's for")
+        sb.appendLine("2. Key strengths and standout features")
+        sb.appendLine("3. Any concerns (maintenance activity, code quality signals, licensing)")
+        sb.appendLine("4. How it compares to alternatives in the same space")
+        sb.appendLine("5. Your overall assessment: would you recommend using this?")
+
+        return sb.toString()
     }
 
     private fun markdownToHtml(markdown: String?, owner: String, name: String): String? {
@@ -102,8 +159,8 @@ class RepoDetailsViewModel @Inject constructor(
         }
     }
 
-    private fun reduceSideEffect(effect: DetailSideEffect) {
-        L.d(TAG, "reduceSideEffect: $effect")
+    private fun handleSideEffect(effect: DetailSideEffect) {
+        L.d(TAG, "handleSideEffect: $effect")
         viewModelScope.launch {
             _sideEffects.send(effect)
         }

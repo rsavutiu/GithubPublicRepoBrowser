@@ -1,11 +1,16 @@
 package com.rsav.githubPublicRepoBrowser.ui.components.atoms
 
 import android.webkit.WebView
+import android.webkit.WebViewClient
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.rsav.githubPublicRepoBrowser.util.L
 import android.graphics.Color as AndroidColor
@@ -16,7 +21,6 @@ private const val TAG = "MarkdownWebView"
 fun MarkdownWebView(
     html: String,
     modifier: Modifier = Modifier,
-    onScrollChanged: (scrollY: Int) -> Unit = {},
 ) {
     L.d(TAG, "composing — html length=${html.length}")
 
@@ -29,8 +33,17 @@ fun MarkdownWebView(
         wrapWithTheme(html, textColor, bgColor, linkColor, codeBgColor)
     }
 
+    val contentHeightDp = remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+
+    val heightModifier = if (contentHeightDp.intValue > 0) {
+        modifier.then(Modifier.height(contentHeightDp.intValue.dp))
+    } else {
+        modifier.then(Modifier.height(200.dp)) // initial minimum while measuring
+    }
+
     AndroidView(
-        modifier = modifier,
+        modifier = heightModifier,
         factory = { context ->
             L.d(TAG, "factory — creating WebView")
             WebView(context).apply {
@@ -38,9 +51,20 @@ fun MarkdownWebView(
                 settings.defaultFontSize = 14
                 settings.loadsImagesAutomatically = true
                 settings.blockNetworkImage = false
+                settings.javaScriptEnabled = true
                 isVerticalScrollBarEnabled = false
-                setOnScrollChangeListener { _, _, scrollY, _, _ ->
-                    onScrollChanged(scrollY)
+
+                webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView, url: String?) {
+                        // Measure content height and report back to Compose
+                        view.evaluateJavascript("document.body.scrollHeight") { heightStr ->
+                            val heightPx = heightStr.toIntOrNull() ?: return@evaluateJavascript
+                            val dpValue = (heightPx / density.density).toInt()
+                            if (dpValue > 0) {
+                                contentHeightDp.intValue = dpValue
+                            }
+                        }
+                    }
                 }
             }
         },

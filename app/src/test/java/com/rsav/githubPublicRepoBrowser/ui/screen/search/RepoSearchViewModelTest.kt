@@ -48,7 +48,7 @@ class RepoSearchViewModelTest {
     fun `initial state has empty query and default trending period`() = runTest {
         val state = viewModel.uiState.value
         assertEquals("", state.query)
-        assertEquals(TrendingPeriod.TODAY, state.trendingPeriod)
+        assertEquals(TrendingPeriod.THIS_WEEK, state.trendingPeriod)
         assertNull(state.selectedLanguage)
         assertNull(state.selectedSpokenLanguage)
     }

@@ -25,6 +25,13 @@ query SearchRepositories($query: String!, $first: Int!, $after: String) {
                     login
                     avatarUrl
                 }
+                repositoryTopics(first: 10) {
+                    nodes {
+                        topic {
+                            name
+                        }
+                    }
+                }
             }
         }
     }

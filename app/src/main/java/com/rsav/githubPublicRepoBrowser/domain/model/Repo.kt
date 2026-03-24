@@ -18,5 +18,6 @@ data class Repo(
     val ownerType: String = "User",
     val readmeText: String? = null,
     val createdAt: String? = null,
-    val updatedAt: String? = null
+    val updatedAt: String? = null,
+    val topics: List<String> = emptyList(),
 )

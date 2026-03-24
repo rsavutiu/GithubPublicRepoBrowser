@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.Tag
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -170,11 +171,13 @@ fun RepoSearchContent(
                 onQueryChanged = { onIntent(SearchIntent.QueryChanged(it)) },
                 onSearch = { onIntent(SearchIntent.Search) },
                 trailingIcons = {
-                    IconButton(onClick = { onIntent(SearchIntent.ShowSaveSearchDialog) }) {
-                        Icon(
-                            imageVector = Icons.Default.BookmarkAdd,
-                            contentDescription = "Save current search",
-                        )
+                    if (uiState.query.isNotBlank()) {
+                        IconButton(onClick = { onIntent(SearchIntent.ShowSaveSearchDialog) }) {
+                            Icon(
+                                imageVector = Icons.Default.BookmarkAdd,
+                                contentDescription = "Save current search",
+                            )
+                        }
                     }
                     IconButton(onClick = { onIntent(SearchIntent.ShowLanguagePicker) }) {
                         Icon(
@@ -289,6 +292,28 @@ fun RepoSearchContent(
                         },
                     )
                 }
+
+                uiState.selectedTopic?.let { topic ->
+                    InputChip(
+                        selected = true,
+                        onClick = { onIntent(SearchIntent.TopicSelected(null)) },
+                        label = { Text(topic) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Tag,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        },
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Remove topic filter",
+                                modifier = Modifier.size(18.dp),
+                            )
+                        },
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -334,6 +359,7 @@ fun RepoSearchContent(
                         modifier = Modifier.padding(horizontal = 8.dp),
                         repos = repos,
                         onRepoClick = { onIntent(SearchIntent.RepoClicked(it)) },
+                        onTopicClick = { onIntent(SearchIntent.TopicSelected(it)) },
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope,
                     )

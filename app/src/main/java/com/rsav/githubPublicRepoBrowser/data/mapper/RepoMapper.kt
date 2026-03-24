@@ -9,7 +9,8 @@ private const val TAG = "RepoMapper"
 private const val MAX_DESCRIPTION_LENGTH = 300
 
 fun SearchRepositoriesQuery.OnRepository.toDomainModel(): Repo {
-    L.d(TAG, "mapping $nameWithOwner — stars=$stargazerCount, forks=$forkCount, lang=${primaryLanguage?.name}, descLen=${description?.length ?: 0}")
+    val topicNames = repositoryTopics.nodes?.mapNotNull { it?.topic?.name } ?: emptyList()
+    L.d(TAG, "mapping $nameWithOwner — stars=$stargazerCount, forks=$forkCount, lang=${primaryLanguage?.name}, topics=$topicNames")
     return Repo(
         id = id,
         name = name,
@@ -24,6 +25,7 @@ fun SearchRepositoriesQuery.OnRepository.toDomainModel(): Repo {
         ownerAvatarUrl = owner.avatarUrl,
         ownerType = owner.__typename,
         createdAt = createdAt,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        topics = topicNames,
     )
 }
