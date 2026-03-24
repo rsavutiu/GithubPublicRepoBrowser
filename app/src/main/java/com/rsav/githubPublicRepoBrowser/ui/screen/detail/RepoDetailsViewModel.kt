@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.rsav.githubPublicRepoBrowser.data.remote.SparklineDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.usecase.GetRepoDetailsUseCase
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AiProvider
 import com.rsav.githubPublicRepoBrowser.util.L
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -48,7 +49,9 @@ class RepoDetailsViewModel @Inject constructor(
             is DetailIntent.LoadDetails -> handleLoadDetails(intent.name, intent.owner)
             is DetailIntent.OpenUrl -> handleSideEffect(DetailSideEffect.OpenBrowser(intent.url))
             is DetailIntent.NavigateBack -> handleSideEffect(DetailSideEffect.NavigateBack)
-            is DetailIntent.AskClaude -> handleAskClaude()
+            is DetailIntent.RequestAskAi -> _uiState.update { it.copy(showAiPicker = true) }
+            is DetailIntent.DismissAskAi -> _uiState.update { it.copy(showAiPicker = false) }
+            is DetailIntent.ConfirmAskAi -> handleAskAi(intent.provider)
         }
     }
 
@@ -78,13 +81,14 @@ class RepoDetailsViewModel @Inject constructor(
         }
     }
 
-    private fun handleAskClaude() {
+    private fun handleAskAi(provider: AiProvider) {
+        _uiState.update { it.copy(showAiPicker = false) }
         val repo = currentRepo ?: return
-        val prompt = buildClaudePrompt(repo, rawMarkdown)
-        handleSideEffect(DetailSideEffect.AskClaude(prompt))
+        val prompt = buildAiPrompt(repo, rawMarkdown)
+        handleSideEffect(DetailSideEffect.LaunchAi(provider, prompt))
     }
 
-    private fun buildClaudePrompt(repo: Repo, readme: String?): String {
+    private fun buildAiPrompt(repo: Repo, readme: String?): String {
         val sb = StringBuilder()
         sb.appendLine("I'm evaluating this GitHub repository and would like your analysis:")
         sb.appendLine()

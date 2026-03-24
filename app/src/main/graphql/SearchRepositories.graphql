@@ -25,6 +25,9 @@ query SearchRepositories($query: String!, $first: Int!, $after: String) {
                     login
                     avatarUrl
                 }
+                licenseInfo {
+                    spdxId
+                }
                 repositoryTopics(first: 10) {
                     nodes {
                         topic {

@@ -26,6 +26,7 @@ fun SearchRepositoriesQuery.OnRepository.toDomainModel(): Repo {
         ownerType = owner.__typename,
         createdAt = createdAt,
         updatedAt = updatedAt,
+        licenseName = licenseInfo?.spdxId,
         topics = topicNames,
     )
 }

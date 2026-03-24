@@ -19,5 +19,6 @@ data class Repo(
     val readmeText: String? = null,
     val createdAt: String? = null,
     val updatedAt: String? = null,
+    val licenseName: String? = null,
     val topics: List<String> = emptyList(),
 )

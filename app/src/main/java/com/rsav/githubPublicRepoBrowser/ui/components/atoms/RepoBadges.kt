@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.TrendingUp
@@ -111,6 +112,17 @@ private fun buildBadges(repo: Repo): List<RepoBadge> {
                 )
             }
         } catch (_: Exception) { /* skip badge */ }
+    }
+
+    // License badge
+    val license = repo.licenseName
+    when {
+        license.isNullOrBlank() || license == "NOASSERTION" -> badges.add(
+            RepoBadge("No license", Icons.Default.Warning, Color(0xFFFF9800))
+        )
+        else -> badges.add(
+            RepoBadge(license, Icons.Default.Gavel, Color(0xFF78909C))
+        )
     }
 
     // High fork ratio — indicates community contributions

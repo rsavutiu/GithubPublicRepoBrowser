@@ -1,14 +1,12 @@
 package com.rsav.githubPublicRepoBrowser.ui.screen.detail
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,7 +27,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,10 +56,14 @@ import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AI_PROVIDERS
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AiProvider
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.FormattedDate
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.MarkdownWebView
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.Sparkline
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.getInstalledAiProviders
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.launchAiProvider
 import com.rsav.githubPublicRepoBrowser.ui.components.molecules.RepoStats
 import com.rsav.githubPublicRepoBrowser.ui.preview.SampleRepoProvider
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
@@ -93,8 +98,8 @@ fun RepoDetailScreen(
                     context.startActivity(intent)
                 }
                 is DetailSideEffect.NavigateBack -> onNavigateBack()
-                is DetailSideEffect.AskClaude -> {
-                    launchClaudeIntent(context, effect.prompt)
+                is DetailSideEffect.LaunchAi -> {
+                    launchAiProvider(context, effect.provider, effect.prompt)
                 }
             }
         }
@@ -139,7 +144,7 @@ fun RepoDetailScreen(
                         Text("GitHub")
                     }
                     OutlinedButton(
-                        onClick = { detailsViewModel.onIntent(DetailIntent.AskClaude) },
+                        onClick = { detailsViewModel.onIntent(DetailIntent.RequestAskAi) },
                         modifier = Modifier.weight(1f),
                     ) {
                         Icon(
@@ -147,7 +152,7 @@ fun RepoDetailScreen(
                             contentDescription = null,
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Ask Claude")
+                        Text("Ask AI")
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -229,6 +234,24 @@ fun RepoDetailScreen(
                 language = repo.languageName,
                 languageColor = repo.languageColor,
             )
+
+            if (!repo.licenseName.isNullOrBlank() && repo.licenseName != "NOASSERTION") {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Gavel,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = repo.licenseName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
 
             if (repo.topics.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -314,33 +337,137 @@ fun RepoDetailScreen(
             }
         }
     }
+
+    // AI picker dialog — must be outside Scaffold to avoid clipping
+    if (uiState.showAiPicker) {
+        AiPickerDialog(
+            context = context,
+            onProviderSelected = { provider ->
+                detailsViewModel.onIntent(DetailIntent.ConfirmAskAi(provider))
+            },
+            onDismiss = { detailsViewModel.onIntent(DetailIntent.DismissAskAi) },
+        )
+    }
 }
 
-private fun launchClaudeIntent(context: Context, prompt: String) {
-    // Try Claude app first via share intent
-    val claudePackage = "com.anthropic.claude"
-    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, prompt)
-        setPackage(claudePackage)
-    }
-    try {
-        context.startActivity(shareIntent)
-        return
-    } catch (_: Exception) {
-        // Claude app not installed, fall through
-    }
+@Composable
+private fun AiPickerDialog(
+    context: Context,
+    onProviderSelected: (AiProvider) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val installedProviders = getInstalledAiProviders(context)
+    val webOnlyProviders = AI_PROVIDERS.filter { it !in installedProviders }
 
-    // Fallback: copy to clipboard and open claude.ai in browser
-    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    clipboard.setPrimaryClip(ClipData.newPlainText("Claude prompt", prompt))
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Ask AI about this repo")
+            }
+        },
+        text = {
+            Column {
+                if (installedProviders.isNotEmpty()) {
+                    Text(
+                        text = "INSTALLED",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                    installedProviders.forEach { provider ->
+                        AiProviderRow(
+                            provider = provider,
+                            isInstalled = true,
+                            onClick = { onProviderSelected(provider) },
+                        )
+                    }
+                }
+                if (webOnlyProviders.isNotEmpty()) {
+                    if (installedProviders.isNotEmpty()) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    }
+                    Text(
+                        text = "OPEN IN BROWSER",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
+                    webOnlyProviders.forEach { provider ->
+                        AiProviderRow(
+                            provider = provider,
+                            isInstalled = false,
+                            onClick = { onProviderSelected(provider) },
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
 
-    val browserIntent = Intent(Intent.ACTION_VIEW, "https://claude.ai/new".toUri())
-    try {
-        context.startActivity(browserIntent)
-        Toast.makeText(context, "Prompt copied! Paste it in Claude.", Toast.LENGTH_LONG).show()
-    } catch (_: Exception) {
-        Toast.makeText(context, "Prompt copied to clipboard.", Toast.LENGTH_SHORT).show()
+@Composable
+private fun AiProviderRow(
+    provider: AiProvider,
+    isInstalled: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 10.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(
+                    color = provider.brandColor.copy(alpha = 0.12f),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = provider.icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = provider.brandColor,
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = provider.name,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = if (isInstalled) provider.tagline else "${provider.tagline} \u00b7 ${provider.webUrl.removePrefix("https://").removeSuffix("/")}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (!isInstalled) {
+            Icon(
+                imageVector = Icons.Default.OpenInBrowser,
+                contentDescription = "Opens in browser",
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

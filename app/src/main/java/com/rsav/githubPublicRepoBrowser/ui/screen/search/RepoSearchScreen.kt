@@ -1,5 +1,6 @@
 package com.rsav.githubPublicRepoBrowser.ui.screen.search
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Arrangement
@@ -107,6 +108,33 @@ fun RepoSearchContent(
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
 ) {
+    // Progressive back: clear filters/state before exiting
+    val hasActiveFilters = uiState.selectedTopic != null ||
+        uiState.selectedLanguage != null ||
+        uiState.selectedSpokenLanguage != null ||
+        uiState.query.isNotEmpty()
+
+    BackHandler(enabled = hasActiveFilters) {
+        when {
+            uiState.showLanguagePicker || uiState.showSpokenLanguagePicker ->
+                onIntent(SearchIntent.DismissPicker)
+            uiState.showSaveSearchDialog ->
+                onIntent(SearchIntent.DismissSaveSearchDialog)
+            uiState.savedSearchPendingDelete != null ->
+                onIntent(SearchIntent.DismissDeleteSavedSearch)
+            uiState.selectedTopic != null ->
+                onIntent(SearchIntent.TopicSelected(null))
+            uiState.selectedLanguage != null ->
+                onIntent(SearchIntent.ProgrammingLanguageSelected(null))
+            uiState.selectedSpokenLanguage != null ->
+                onIntent(SearchIntent.SpokenLanguageSelected(null))
+            uiState.query.isNotEmpty() -> {
+                onIntent(SearchIntent.QueryChanged(""))
+                onIntent(SearchIntent.Search)
+            }
+        }
+    }
+
     // Language picker bottom sheets
     if (uiState.showLanguagePicker) {
         LanguagePickerSheet(
