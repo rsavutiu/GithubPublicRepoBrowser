@@ -38,7 +38,8 @@
       "Bash(adb logcat:*)",
       "Bash(adb bugreport:*)",
       "Read(//c/tmp/**)",
-      "Bash(unzip -o \"C:\\\\Users\\\\rsavu\\\\AppData\\\\Local\\\\Temp\\\\bugreport.zip\" -d bugreport_extract)"
+      "Bash(unzip -o \"C:\\\\Users\\\\rsavu\\\\AppData\\\\Local\\\\Temp\\\\bugreport.zip\" -d bugreport_extract)",
+      "Bash(GIT_SEQUENCE_EDITOR=\"sed -i ''s/^pick 2fd6974/reword 2fd6974/''\" git rebase -i 2fd6974^ --rebase-merges)"
     ]
   }
 }
