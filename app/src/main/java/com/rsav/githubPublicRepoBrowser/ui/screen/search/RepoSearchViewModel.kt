@@ -35,7 +35,7 @@ import javax.inject.Inject
 /** Encapsulates all filter state that triggers a new search. */
 private data class SearchParams(
     val freeText: String = "",
-    val trendingPeriod: TrendingPeriod? = TrendingPeriod.TODAY,
+    val trendingPeriod: TrendingPeriod? = TrendingPeriod.THIS_WEEK,
     val programmingLanguage: ProgrammingLanguage? = null,
     val spokenLanguage: SpokenLanguage? = null,
     val topic: String? = null,

@@ -1,11 +1,13 @@
 package com.rsav.githubPublicRepoBrowser.di
 
 import com.rsav.githubPublicRepoBrowser.data.local.SavedSearchDataStore
-import com.rsav.githubPublicRepoBrowser.data.repository.RepositoryDetailsImpl
-import com.rsav.githubPublicRepoBrowser.data.repository.SearchRepositoriesImpl
+import com.rsav.githubPublicRepoBrowser.data.repository.DelegatingDetailsRepository
+import com.rsav.githubPublicRepoBrowser.data.repository.DelegatingSearchRepository
+import com.rsav.githubPublicRepoBrowser.data.repository.DelegatingUserProfileRepository
 import com.rsav.githubPublicRepoBrowser.domain.repository.IRepositoryDetails
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISavedSearchRepository
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
+import com.rsav.githubPublicRepoBrowser.domain.repository.IUserProfileRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -18,13 +20,17 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindRepoRepository(impl: SearchRepositoriesImpl): ISearchRepositories
+    abstract fun bindRepoRepository(impl: DelegatingSearchRepository): ISearchRepositories
 
     @Binds
     @Singleton
-    abstract fun bindRepositoryDetails(impl: RepositoryDetailsImpl): IRepositoryDetails
+    abstract fun bindRepositoryDetails(impl: DelegatingDetailsRepository): IRepositoryDetails
 
     @Binds
     @Singleton
     abstract fun bindSavedSearchRepository(impl: SavedSearchDataStore): ISavedSearchRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserProfileRepository(impl: DelegatingUserProfileRepository): IUserProfileRepository
 }

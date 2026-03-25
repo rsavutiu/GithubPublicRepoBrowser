@@ -15,7 +15,7 @@ class SearchReposUseCase @Inject constructor(
 ) {
     operator fun invoke(
         freeText: String = "",
-        trendingPeriod: TrendingPeriod? = TrendingPeriod.TODAY,
+        trendingPeriod: TrendingPeriod? = TrendingPeriod.THIS_WEEK,
         programmingLanguage: ProgrammingLanguage? = null,
         spokenLanguage: SpokenLanguage? = null,
         topic: String? = null,

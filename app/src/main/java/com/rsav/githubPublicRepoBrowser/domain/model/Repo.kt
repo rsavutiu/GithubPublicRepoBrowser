@@ -21,4 +21,6 @@ data class Repo(
     val updatedAt: String? = null,
     val licenseName: String? = null,
     val topics: List<String> = emptyList(),
+    val openIssuesCount: Int = 0,
+    val closedIssuesCount: Int = 0,
 )

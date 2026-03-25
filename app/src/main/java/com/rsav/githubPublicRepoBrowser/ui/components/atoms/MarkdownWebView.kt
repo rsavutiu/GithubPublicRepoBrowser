@@ -2,14 +2,20 @@ package com.rsav.githubPublicRepoBrowser.ui.components.atoms
 
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.rsav.githubPublicRepoBrowser.util.L
@@ -22,6 +28,25 @@ fun MarkdownWebView(
     html: String,
     modifier: Modifier = Modifier,
 ) {
+    // WebView is not supported in Android Studio Previews
+    if (LocalInspectionMode.current) {
+        Box(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = "Markdown Preview (WebView)",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+        return
+    }
+
     L.d(TAG, "composing — html length=${html.length}")
 
     val textColor = MaterialTheme.colorScheme.onSurface.toArgb().toHexColor()
@@ -34,7 +59,6 @@ fun MarkdownWebView(
     }
 
     val contentHeightDp = remember { mutableIntStateOf(0) }
-    val density = LocalDensity.current
 
     val heightModifier = if (contentHeightDp.intValue > 0) {
         modifier.then(Modifier.height(contentHeightDp.intValue.dp))
@@ -56,14 +80,14 @@ fun MarkdownWebView(
 
                 webViewClient = object : WebViewClient() {
                     override fun onPageFinished(view: WebView, url: String?) {
-                        // Measure content height and report back to Compose
-                        view.evaluateJavascript("document.body.scrollHeight") { heightStr ->
-                            val heightPx = heightStr.toIntOrNull() ?: return@evaluateJavascript
-                            val dpValue = (heightPx / density.density).toInt()
+                        view.postDelayed({
+                            val realHeightPx = (view.contentHeight * view.scale).toInt()
+                            val dpValue = (realHeightPx / context.resources.displayMetrics.density).toInt() + 24
+                            L.d(TAG, "measured height: contentHeight=${view.contentHeight}, scale=${view.scale}, realPx=$realHeightPx, dp=$dpValue")
                             if (dpValue > 0) {
                                 contentHeightDp.intValue = dpValue
                             }
-                        }
+                        }, 500)
                     }
                 }
             }

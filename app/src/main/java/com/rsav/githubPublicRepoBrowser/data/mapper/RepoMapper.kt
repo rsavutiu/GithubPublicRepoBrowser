@@ -28,5 +28,7 @@ fun SearchRepositoriesQuery.OnRepository.toDomainModel(): Repo {
         updatedAt = updatedAt,
         licenseName = licenseInfo?.spdxId,
         topics = topicNames,
+        openIssuesCount = openIssues.totalCount,
+        closedIssuesCount = closedIssues.totalCount,
     )
 }

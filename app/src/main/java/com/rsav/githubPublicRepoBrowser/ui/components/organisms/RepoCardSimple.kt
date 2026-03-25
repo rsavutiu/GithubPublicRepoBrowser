@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.FormattedDate
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.HealthScoreIndicator
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.RepoBadges
 import com.rsav.githubPublicRepoBrowser.ui.preview.SampleRepoProvider
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
@@ -92,11 +93,13 @@ fun RepoCardSimple(
                 }
 
                 Text(
-                    modifier = nameModifier,
+                    modifier = nameModifier.weight(1f),
                     text = repo.nameWithOwner,
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
+
+                HealthScoreIndicator(repo = repo)
             }
 
             if (!repo.description.isNullOrBlank()) {

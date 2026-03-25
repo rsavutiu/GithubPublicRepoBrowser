@@ -70,7 +70,6 @@ import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 
 private const val SHARED_ANIM_MS = 1000
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun RepoDetailScreen(
     modifier: Modifier = Modifier,
@@ -105,13 +104,39 @@ fun RepoDetailScreen(
         }
     }
 
+    RepoDetailContent(
+        modifier = modifier,
+        repo = repo,
+        uiState = uiState,
+        onIntent = detailsViewModel::onIntent,
+        onTopicClick = onTopicClick,
+        onOwnerClick = onOwnerClick,
+        animatedVisibilityScope = animatedVisibilityScope,
+        sharedTransitionScope = sharedTransitionScope,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class, ExperimentalLayoutApi::class)
+@Composable
+fun RepoDetailContent(
+    modifier: Modifier = Modifier,
+    repo: Repo,
+    uiState: DetailUiState,
+    onIntent: (DetailIntent) -> Unit = {},
+    onTopicClick: (String) -> Unit = {},
+    onOwnerClick: (String) -> Unit = {},
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    sharedTransitionScope: SharedTransitionScope? = null,
+) {
+    val context = LocalContext.current
+
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(repo.name) },
                 navigationIcon = {
-                    IconButton(onClick = { detailsViewModel.onIntent(DetailIntent.NavigateBack) }) {
+                    IconButton(onClick = { onIntent(DetailIntent.NavigateBack) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
@@ -133,7 +158,7 @@ fun RepoDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Button(
-                        onClick = { detailsViewModel.onIntent(DetailIntent.OpenUrl(repo.url)) },
+                        onClick = { onIntent(DetailIntent.OpenUrl(repo.url)) },
                         modifier = Modifier.weight(1f),
                     ) {
                         Icon(
@@ -144,7 +169,7 @@ fun RepoDetailScreen(
                         Text("GitHub")
                     }
                     OutlinedButton(
-                        onClick = { detailsViewModel.onIntent(DetailIntent.RequestAskAi) },
+                        onClick = { onIntent(DetailIntent.RequestAskAi) },
                         modifier = Modifier.weight(1f),
                     ) {
                         Icon(
@@ -321,7 +346,7 @@ fun RepoDetailScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = uiState.error!!,
+                            text = uiState.error,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium,
                         )
@@ -343,9 +368,9 @@ fun RepoDetailScreen(
         AiPickerDialog(
             context = context,
             onProviderSelected = { provider ->
-                detailsViewModel.onIntent(DetailIntent.ConfirmAskAi(provider))
+                onIntent(DetailIntent.ConfirmAskAi(provider))
             },
-            onDismiss = { detailsViewModel.onIntent(DetailIntent.DismissAskAi) },
+            onDismiss = { onIntent(DetailIntent.DismissAskAi) },
         )
     }
 }
@@ -477,8 +502,11 @@ private fun RepoDetailScreenPreview(
     @PreviewParameter(SampleRepoProvider::class) repo: Repo,
 ) {
     MyApplicationTheme {
-        RepoDetailScreen(
+        RepoDetailContent(
             repo = repo,
+            uiState = DetailUiState(
+                readmeHtml = "<h1>Sample README</h1><p>This is a preview of the repository detail screen.</p>",
+            ),
         )
     }
 }

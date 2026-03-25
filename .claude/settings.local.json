@@ -39,7 +39,9 @@
       "Bash(adb bugreport:*)",
       "Read(//c/tmp/**)",
       "Bash(unzip -o \"C:\\\\Users\\\\rsavu\\\\AppData\\\\Local\\\\Temp\\\\bugreport.zip\" -d bugreport_extract)",
-      "Bash(GIT_SEQUENCE_EDITOR=\"sed -i ''s/^pick 2fd6974/reword 2fd6974/''\" git rebase -i 2fd6974^ --rebase-merges)"
+      "Bash(GIT_SEQUENCE_EDITOR=\"sed -i ''s/^pick 2fd6974/reword 2fd6974/''\" git rebase -i 2fd6974^ --rebase-merges)",
+      "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'if [ \"\"$GIT_COMMIT\"\" = \"\"2fd6974327b2c6400678201ae52dc8692a456bc3\"\" ]; then echo \"\"Merge branch main\"\"; else cat; fi' -- 2fd6974^..HEAD)",
+      "Bash(find /c/Users/rsavu/AndroidStudioProjects/GithubPublicRepoBrowser -name *.graphql)"
     ]
   }
 }

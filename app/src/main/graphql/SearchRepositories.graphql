@@ -28,6 +28,12 @@ query SearchRepositories($query: String!, $first: Int!, $after: String) {
                 licenseInfo {
                     spdxId
                 }
+                openIssues: issues(states: OPEN) {
+                    totalCount
+                }
+                closedIssues: issues(states: CLOSED) {
+                    totalCount
+                }
                 repositoryTopics(first: 10) {
                     nodes {
                         topic {

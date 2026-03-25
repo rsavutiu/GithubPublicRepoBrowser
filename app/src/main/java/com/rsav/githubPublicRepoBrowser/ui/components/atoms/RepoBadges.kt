@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Star
@@ -41,7 +42,7 @@ fun RepoBadges(
     repo: Repo,
     modifier: Modifier = Modifier,
 ) {
-    val badges = remember(repo.id, repo.stargazerCount, repo.forkCount, repo.updatedAt) {
+    val badges = remember(repo.id, repo.stargazerCount, repo.forkCount, repo.updatedAt, repo.openIssuesCount, repo.closedIssuesCount) {
         buildBadges(repo)
     }
 
@@ -123,6 +124,20 @@ private fun buildBadges(repo: Repo): List<RepoBadge> {
         else -> badges.add(
             RepoBadge(license, Icons.Default.Gavel, Color(0xFF78909C))
         )
+    }
+
+    // Issue pulse
+    val totalIssues = repo.openIssuesCount + repo.closedIssuesCount
+    if (totalIssues > 0) {
+        val closeRatio = repo.closedIssuesCount.toFloat() / totalIssues
+        when {
+            repo.openIssuesCount > 50 && closeRatio < 0.5f -> badges.add(
+                RepoBadge("${formatBadgeCount(repo.openIssuesCount)} open issues", Icons.Default.BugReport, Color(0xFFFF5722))
+            )
+            closeRatio >= 0.8f -> badges.add(
+                RepoBadge("Issues: ${(closeRatio * 100).toInt()}% resolved", Icons.Default.BugReport, Color(0xFF4CAF50))
+            )
+        }
     }
 
     // High fork ratio — indicates community contributions

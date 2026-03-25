@@ -5,9 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
+import com.rsav.githubPublicRepoBrowser.domain.repository.IUserProfileRepository
 import com.rsav.githubPublicRepoBrowser.util.L
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -22,7 +22,7 @@ import javax.inject.Inject
 class UserReposViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val searchRepository: ISearchRepositories,
-    private val dataSource: ApolloRepoDataSource,
+    private val userProfileRepository: IUserProfileRepository,
 ) : ViewModel() {
 
     private val userLogin: String = savedStateHandle.get<String>("userLogin") ?: ""
@@ -50,18 +50,17 @@ class UserReposViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
-                val profile = dataSource.getUserProfile(userLogin)
-                val user = profile.user
-                if (user != null) {
+                val profile = userProfileRepository.getUserProfile(userLogin)
+                if (profile != null) {
                     _uiState.value = _uiState.value.copy(
-                        userName = user.name,
-                        avatarUrl = user.avatarUrl as? String,
-                        bio = user.bio,
-                        company = user.company,
-                        location = user.location,
-                        followers = user.followers.totalCount,
-                        following = user.following.totalCount,
-                        repoCount = user.repositories.totalCount,
+                        userName = profile.name,
+                        avatarUrl = profile.avatarUrl,
+                        bio = profile.bio,
+                        company = profile.company,
+                        location = profile.location,
+                        followers = profile.followers,
+                        following = profile.following,
+                        repoCount = profile.repoCount,
                         isLoading = false,
                     )
                 } else {
