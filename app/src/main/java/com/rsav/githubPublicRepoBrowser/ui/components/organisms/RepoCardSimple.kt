@@ -22,10 +22,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import com.rsav.githubPublicRepoBrowser.R
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.FormattedDate
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
@@ -44,6 +46,7 @@ fun RepoCardSimple(
     onClick: (Repo) -> Unit,
     modifier: Modifier = Modifier,
     onTopicClick: (String) -> Unit = {},
+    contributorCount: Int? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
 ) {
@@ -119,10 +122,10 @@ fun RepoCardSimple(
 
             if (!repo.updatedAt.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                FormattedDate(prefix = "Last Update at: ", isoDate = repo.updatedAt)
+                FormattedDate(prefix = stringResource(R.string.last_update_prefix), isoDate = repo.updatedAt)
             }
 
-            RepoBadges(repo = repo)
+            RepoBadges(repo = repo, contributorCount = contributorCount)
 
             if (repo.topics.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(6.dp))

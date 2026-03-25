@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.net.toUri
+import com.rsav.githubPublicRepoBrowser.R
 
 data class AiProvider(
     val name: String,
@@ -114,13 +115,13 @@ fun launchAiProvider(context: Context, provider: AiProvider, prompt: String) {
 
     // Fallback: copy to clipboard and open web URL
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    clipboard.setPrimaryClip(ClipData.newPlainText("AI prompt", prompt))
+    clipboard.setPrimaryClip(ClipData.newPlainText(context.getString(R.string.ai_prompt_label), prompt))
 
     val browserIntent = Intent(Intent.ACTION_VIEW, provider.webUrl.toUri())
     try {
         context.startActivity(browserIntent)
-        Toast.makeText(context, "Prompt copied! Paste it in ${provider.name}.", Toast.LENGTH_LONG).show()
+        Toast.makeText(context, context.getString(R.string.prompt_copied_toast, provider.name), Toast.LENGTH_LONG).show()
     } catch (_: Exception) {
-        Toast.makeText(context, "Prompt copied to clipboard.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, context.getString(R.string.prompt_copied_simple_toast), Toast.LENGTH_SHORT).show()
     }
 }

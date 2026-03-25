@@ -9,10 +9,16 @@
 - Heuristic Badges (popularity, activity, staleness, license, fork ratio, issue pulse)
 - Ask AI (multi-provider: Claude, ChatGPT, Gemini, Copilot, Perplexity — app or web fallback)
 - License Badge (SPDX ID on cards + detail)
-- README parsing (6 filename variants)
+- README parsing (6 filename variants: README.md, readme.md, README.MD, Readme.md, README, README.rst)
 - StrictMode integration (network + custom slow call detection)
 - Health Score (0-100 composite ring on each card, 7 weighted signals)
 - Issue/PR Pulse (open/closed issue counts via GraphQL, factored into health score and badges)
+- Dependency Insights (12 ecosystems: npm, Gradle, pip, Cargo, Go, RubyGems, pub, Maven, CocoaPods, Composer, Swift PM, Podfile)
+- GitHub-inspired theme (custom Material 3 color scheme, light + dark, no dynamic color)
+- REST API alternative (repository pattern encapsulating GraphQL/REST swap)
+- Per-app language support (106 languages, locale_config.xml)
+- Last update time (updatedAt already fetched and displayed on cards)
+- "This Year" trending period option (default: This Week)
 
 ## Suggested Next Features
 
@@ -63,13 +69,19 @@ releases(first: 1, orderBy: { field: CREATED_AT, direction: DESC }) {
 
 **Why:** Release recency tells the maintenance story at a glance. A repo with commits but no releases may be unstable.
 
-### 6. Dependency Insights (Advanced)
-For repos with `package.json`, `build.gradle.kts`, `Cargo.toml`, or `requirements.txt`:
-- Fetch the file via GraphQL `object(expression: "HEAD:package.json")`
-- Parse dependencies
-- Flag known outdated or deprecated packages
+### 6. Fork Network Visualization
+Show a visual tree of the most popular forks for a repo.
 
-**Why:** Deep contextual intelligence. Helps evaluate code quality without reading source.
+**Implementation:** Fetch `/repos/{owner}/{repo}/forks?sort=stargazers` and display top 5 forks with their star counts.
+
+**Why:** Helps discover actively maintained forks of abandoned projects.
+
+### 7. Commit Frequency Heatmap
+Replace or augment the sparkline with a GitHub-style contribution calendar grid.
+
+**Implementation:** Use the same `/stats/participation` data but render as a 52×7 grid with color intensity.
+
+**Why:** More intuitive than a line chart for spotting patterns (weekday vs weekend, seasonal activity).
 
 ## Priority Recommendation
 1. **Release Tracker** — one extra GraphQL field, high signal
@@ -77,4 +89,5 @@ For repos with `package.json`, `build.gradle.kts`, `Cargo.toml`, or `requirement
 3. **Similar Repos** — reuses existing search infrastructure
 4. **Contributor Count** — one REST call, high value signal
 5. **Offline Favorites** — requires Room setup, but valuable
-6. **Dependency Insights** — most complex, save for later
+6. **Fork Network** — one REST call, niche but unique
+7. **Commit Heatmap** — visual polish, reuses existing data

@@ -41,7 +41,26 @@
       "Bash(unzip -o \"C:\\\\Users\\\\rsavu\\\\AppData\\\\Local\\\\Temp\\\\bugreport.zip\" -d bugreport_extract)",
       "Bash(GIT_SEQUENCE_EDITOR=\"sed -i ''s/^pick 2fd6974/reword 2fd6974/''\" git rebase -i 2fd6974^ --rebase-merges)",
       "Bash(FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f --msg-filter 'if [ \"\"$GIT_COMMIT\"\" = \"\"2fd6974327b2c6400678201ae52dc8692a456bc3\"\" ]; then echo \"\"Merge branch main\"\"; else cat; fi' -- 2fd6974^..HEAD)",
-      "Bash(find /c/Users/rsavu/AndroidStudioProjects/GithubPublicRepoBrowser -name *.graphql)"
+      "Bash(find /c/Users/rsavu/AndroidStudioProjects/GithubPublicRepoBrowser -name *.graphql)",
+      "Bash(find app/src/main/res/values-* -name \"strings.xml\")",
+      "Bash(where python:*)",
+      "Bash(where py:*)",
+      "Bash(where perl:*)",
+      "Bash(where node:*)",
+      "Bash(C:/Python314/python.exe fix_strings.py)",
+      "Bash(ls -d app/src/main/res/values-*/)",
+      "Bash(adb uninstall:*)",
+      "Bash(aapt2 dump:*)",
+      "Bash(aapt dump:*)",
+      "Bash(\"$ANDROID_HOME/build-tools/36.0.0/aapt\" dump:*)",
+      "Bash(\"$ANDROID_HOME/build-tools/35.0.0/aapt\" dump:*)",
+      "Bash(C:/Users/rsavu/AppData/Local/Android/Sdk/build-tools/36.0.0/aapt2 dump:*)",
+      "Bash(adb devices:*)",
+      "Bash(adb -s ZY22KMNN65 shell \"cmd locale get-app-locales com.rsav.githubPublicRepoBrowser\")",
+      "Bash(adb -s ZY22KMNN65 shell \"cmd locale set-app-locales com.rsav.githubPublicRepoBrowser --locales ro\")",
+      "Bash(adb -s ZY22KMNN65 uninstall com.rsav.githubPublicRepoBrowser)",
+      "Bash(adb -s ZY22KMNN65 shell am start -n com.rsav.githubPublicRepoBrowser/.MainActivity)",
+      "Bash(find C:UsersrsavuAndroidStudioProjectsGithubPublicRepoBrowser/app/src/main -name *Database* -o -name *Entity* -o -name *Dao*)"
     ]
   }
 }

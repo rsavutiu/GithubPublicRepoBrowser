@@ -27,8 +27,18 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -48,20 +58,25 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.rsav.githubPublicRepoBrowser.R
+import com.rsav.githubPublicRepoBrowser.domain.model.DependencyInfo
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AI_PROVIDERS
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AiProvider
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.CommitHeatmap
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.FormattedDate
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
+import com.rsav.githubPublicRepoBrowser.ui.components.atoms.HeatmapLegend
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.MarkdownWebView
-import com.rsav.githubPublicRepoBrowser.ui.components.atoms.Sparkline
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.getInstalledAiProviders
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.launchAiProvider
 import com.rsav.githubPublicRepoBrowser.ui.components.molecules.RepoStats
@@ -139,7 +154,42 @@ fun RepoDetailContent(
                     IconButton(onClick = { onIntent(DetailIntent.NavigateBack) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
+                        )
+                    }
+                },
+                actions = {
+                    // Offline favorite button
+                    IconButton(onClick = { onIntent(DetailIntent.ToggleFavorite) }) {
+                        Icon(
+                            imageVector = if (uiState.isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                            contentDescription = stringResource(
+                                if (uiState.isFavorite) R.string.unsave_repo_desc else R.string.save_repo_desc
+                            ),
+                            tint = if (uiState.isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    // GitHub star button (only if logged in)
+                    if (uiState.isLoggedIn) {
+                        IconButton(onClick = { onIntent(DetailIntent.ToggleStar) }) {
+                            Icon(
+                                imageVector = if (uiState.isStarred == true) Icons.Default.Star else Icons.Default.StarBorder,
+                                contentDescription = "Star on GitHub",
+                                tint = if (uiState.isStarred == true) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    // Share button
+                    IconButton(onClick = {
+                        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                            putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_repo_text, repo.url))
+                            type = "text/plain"
+                        }
+                        context.startActivity(Intent.createChooser(sendIntent, null))
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = stringResource(R.string.share_desc),
                         )
                     }
                 },
@@ -166,7 +216,7 @@ fun RepoDetailContent(
                             contentDescription = null,
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("GitHub")
+                        Text(stringResource(R.string.github_button))
                     }
                     OutlinedButton(
                         onClick = { onIntent(DetailIntent.RequestAskAi) },
@@ -177,7 +227,7 @@ fun RepoDetailContent(
                             contentDescription = null,
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Ask AI")
+                        Text(stringResource(R.string.ask_ai_button))
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -278,6 +328,48 @@ fun RepoDetailContent(
                 }
             }
 
+            // Contributor count + bus factor warning
+            if (uiState.contributorCount != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.People,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "${uiState.contributorCount} contributors",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    // Bus factor warning
+                    if (uiState.contributorCount <= 2 && repo.stargazerCount >= 1000) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Icon(
+                            imageVector = Icons.Default.Warning,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = Color(0xFFFF9800),
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = "Single maintainer risk",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFFFF9800),
+                        )
+                    } else if (uiState.contributorCount >= 100) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Strong community",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+            }
+
             if (repo.topics.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 FlowRow(
@@ -303,24 +395,38 @@ fun RepoDetailContent(
 
             if (!repo.updatedAt.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                FormattedDate(prefix = "Last Update at:", isoDate = repo.updatedAt)
+                FormattedDate(prefix = stringResource(R.string.last_update_prefix), isoDate = repo.updatedAt)
             }
 
-            if (uiState.weeklyCommits.size >= 2) {
+            if (uiState.weeklyCommits.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Commit activity (last ${uiState.weeklyCommits.size} weeks)",
+                    text = stringResource(R.string.commit_activity_last_weeks, uiState.weeklyCommits.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Sparkline(
-                    data = uiState.weeklyCommits,
+                CommitHeatmap(
+                    weeklyData = uiState.weeklyCommits,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(140.dp),
+                        .height(40.dp),
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                HeatmapLegend(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(20.dp),
                 )
             }
+
+            // Dependencies section
+            Spacer(modifier = Modifier.height(12.dp))
+            DependenciesSection(
+                uiState = uiState,
+                onLoadDependencies = { onIntent(DetailIntent.LoadDependencies) },
+                onToggleDependencies = { onIntent(DetailIntent.ToggleDependencies) },
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider()
@@ -394,14 +500,14 @@ private fun AiPickerDialog(
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Ask AI about this repo")
+                Text(stringResource(R.string.ask_ai_title))
             }
         },
         text = {
             Column {
                 if (installedProviders.isNotEmpty()) {
                     Text(
-                        text = "INSTALLED",
+                        text = stringResource(R.string.installed_label),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp),
@@ -419,7 +525,7 @@ private fun AiPickerDialog(
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                     }
                     Text(
-                        text = "OPEN IN BROWSER",
+                        text = stringResource(R.string.open_in_browser_label),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 4.dp),
@@ -437,7 +543,7 @@ private fun AiPickerDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         },
     )
@@ -488,9 +594,104 @@ private fun AiProviderRow(
         if (!isInstalled) {
             Icon(
                 imageVector = Icons.Default.OpenInBrowser,
-                contentDescription = "Opens in browser",
+                contentDescription = stringResource(R.string.open_in_browser_desc),
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun DependenciesSection(
+    uiState: DetailUiState,
+    onLoadDependencies: () -> Unit,
+    onToggleDependencies: () -> Unit,
+) {
+    val hasLoaded = uiState.dependencyInfos.isNotEmpty() || (!uiState.isDependenciesLoading && uiState.showDependencies)
+
+    if (!hasLoaded && !uiState.isDependenciesLoading) {
+        // Show the button to load dependencies
+        OutlinedButton(
+            onClick = onLoadDependencies,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Extension,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(stringResource(R.string.dependencies_button))
+        }
+    } else if (uiState.isDependenciesLoading) {
+        // Loading state
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(modifier = Modifier.height(8.dp))
+            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.dependencies_loading),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    } else if (uiState.dependencyInfos.isEmpty()) {
+        // No dependencies found
+        Text(
+            text = stringResource(R.string.dependencies_none),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    } else {
+        // Show toggle header
+        OutlinedButton(
+            onClick = onToggleDependencies,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Extension,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(stringResource(R.string.dependencies_button))
+            Spacer(modifier = Modifier.weight(1f))
+            Icon(
+                imageVector = if (uiState.showDependencies) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+
+        if (uiState.showDependencies) {
+            Spacer(modifier = Modifier.height(8.dp))
+            uiState.dependencyInfos.forEach { info ->
+                DependencyEcosystemSection(info)
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DependencyEcosystemSection(info: DependencyInfo) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "${info.ecosystem} (${info.sourceFile}) \u2014 ${info.dependencies.size} ${if (info.dependencies.size == 1) "dependency" else "dependencies"}",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        info.dependencies.forEach { dep ->
+            Text(
+                text = if (dep.version != null) "${dep.name}: ${dep.version}" else dep.name,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(start = 8.dp, top = 1.dp, bottom = 1.dp),
             )
         }
     }

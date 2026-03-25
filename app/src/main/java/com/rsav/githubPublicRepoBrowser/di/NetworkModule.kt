@@ -4,11 +4,13 @@ import android.net.TrafficStats
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.network.okHttpClient
 import com.rsav.githubPublicRepoBrowser.BuildConfig
+import com.rsav.githubPublicRepoBrowser.data.auth.GitHubAuthManager
 import com.rsav.githubPublicRepoBrowser.util.L
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import java.net.Socket
@@ -24,13 +26,16 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(authManager: GitHubAuthManager): OkHttpClient {
         L.d(TAG, "Creating OkHttpClient")
         return OkHttpClient.Builder()
             .socketFactory(TaggedSocketFactory())
             .addInterceptor(Interceptor { chain ->
+                // Prefer user's OAuth token, fall back to build config PAT
+                val token = runBlocking { authManager.getAccessToken() }
+                    ?: BuildConfig.GITHUB_TOKEN
                 val request = chain.request().newBuilder()
-                    .addHeader("Authorization", "Bearer ${BuildConfig.GITHUB_TOKEN}")
+                    .addHeader("Authorization", "Bearer $token")
                     .build()
                 L.d(TAG, "→ ${request.method} ${request.url}")
                 val response = chain.proceed(request)

@@ -30,7 +30,7 @@
     <string name="ask_ai_title">Ask AI about this repo</string>
     <string name="open_in_browser_desc">Opens in browser</string>
     <string name="commit_activity_last_weeks">Commit activity (last %1$d weeks)</string>
-    <string name="last_update_prefix">Last Update at:</string>
+    <string name="last_update_prefix">Last Update at: </string>
     <string name="trending_today">Today</string>
     <string name="trending_this_week">This week</string>
     <string name="trending_this_month">This month</string>
@@ -50,4 +50,12 @@
     <string name="ai_prompt_label">AI prompt</string>
     <string name="prompt_copied_toast">Prompt copied! Paste it in %1$s.</string>
     <string name="prompt_copied_simple_toast">Prompt copied to clipboard.</string>
+    <string name="created_prefix">Created </string>
+    <string name="installed_label">INSTALLED</string>
+    <string name="open_in_browser_label">OPEN IN BROWSER</string>
+    <string name="search_content_desc">Search</string>
+    <string name="dependencies_button">Dependencies</string>
+    <string name="dependencies_count">%1$d dependencies</string>
+    <string name="dependencies_none">No dependency files found</string>
+    <string name="dependencies_loading">Loading dependencies\u2026</string>
 </resources>

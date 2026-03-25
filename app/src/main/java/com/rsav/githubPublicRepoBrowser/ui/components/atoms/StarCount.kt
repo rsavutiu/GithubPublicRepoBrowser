@@ -12,8 +12,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.rsav.githubPublicRepoBrowser.R
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 import java.util.Locale
 
@@ -28,7 +30,7 @@ fun StarCount(
     ) {
         Icon(
             imageVector = Icons.Default.Star,
-            contentDescription = "Stars",
+            contentDescription = stringResource(R.string.stars),
             modifier = Modifier.size(16.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )

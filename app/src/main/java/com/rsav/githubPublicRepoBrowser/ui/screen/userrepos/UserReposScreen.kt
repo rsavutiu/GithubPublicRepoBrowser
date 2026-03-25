@@ -29,11 +29,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.rsav.githubPublicRepoBrowser.R
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
 import com.rsav.githubPublicRepoBrowser.ui.components.organisms.RepoList
@@ -69,7 +71,7 @@ fun UserReposScreen(
                     IconButton(onClick = { viewModel.onIntent(UserReposIntent.NavigateBack) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
@@ -132,12 +134,12 @@ fun UserReposScreen(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${uiState.followers} followers",
+                            text = stringResource(R.string.followers_count, uiState.followers),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = " \u00b7 ${uiState.following} following",
+                            text = " \u00b7 ${stringResource(R.string.following_count, uiState.following)}",
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -164,7 +166,7 @@ fun UserReposScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "${uiState.repoCount} repositories",
+                text = stringResource(R.string.repos_count, uiState.repoCount),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
             )

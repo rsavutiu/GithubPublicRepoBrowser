@@ -2,8 +2,15 @@ package com.rsav.githubPublicRepoBrowser.ui.screen.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.rsav.githubPublicRepoBrowser.data.auth.GitHubAuthManager
+import com.rsav.githubPublicRepoBrowser.data.parser.DependencyParser
+import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.ContributorDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.GitHubStarDataSource
 import com.rsav.githubPublicRepoBrowser.data.remote.SparklineDataSource
+import com.rsav.githubPublicRepoBrowser.domain.model.DependencyInfo
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
+import com.rsav.githubPublicRepoBrowser.domain.repository.IFavoriteRepository
 import com.rsav.githubPublicRepoBrowser.domain.usecase.GetRepoDetailsUseCase
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AiProvider
 import com.rsav.githubPublicRepoBrowser.util.L
@@ -26,6 +33,11 @@ import javax.inject.Inject
 class RepoDetailsViewModel @Inject constructor(
     private val getRepoDetailsUseCase: GetRepoDetailsUseCase,
     private val sparklineDataSource: SparklineDataSource,
+    private val contributorDataSource: ContributorDataSource,
+    private val apolloRepoDataSource: ApolloRepoDataSource,
+    private val favoriteRepository: IFavoriteRepository,
+    private val starDataSource: GitHubStarDataSource,
+    private val authManager: GitHubAuthManager,
     private val parser: Parser,
     private val htmlRenderer: HtmlRenderer,
 ) : ViewModel() {
@@ -39,8 +51,28 @@ class RepoDetailsViewModel @Inject constructor(
     private var currentRepo: Repo? = null
     private var rawMarkdown: String? = null
 
+    init {
+        // Track login state
+        viewModelScope.launch {
+            authManager.isLoggedIn.collect { loggedIn ->
+                _uiState.update { it.copy(isLoggedIn = loggedIn) }
+            }
+        }
+    }
+
     fun setRepo(repo: Repo) {
         currentRepo = repo
+        // Check favorite status
+        viewModelScope.launch {
+            favoriteRepository.isFavorite(repo.id).collect { isFav ->
+                _uiState.update { it.copy(isFavorite = isFav) }
+            }
+        }
+        // Check star status if logged in
+        viewModelScope.launch {
+            val starred = starDataSource.isStarred(repo.ownerLogin, repo.name)
+            _uiState.update { it.copy(isStarred = starred) }
+        }
     }
 
     fun onIntent(intent: DetailIntent) {
@@ -52,6 +84,10 @@ class RepoDetailsViewModel @Inject constructor(
             is DetailIntent.RequestAskAi -> _uiState.update { it.copy(showAiPicker = true) }
             is DetailIntent.DismissAskAi -> _uiState.update { it.copy(showAiPicker = false) }
             is DetailIntent.ConfirmAskAi -> handleAskAi(intent.provider)
+            is DetailIntent.LoadDependencies -> handleLoadDependencies()
+            is DetailIntent.ToggleDependencies -> _uiState.update { it.copy(showDependencies = !it.showDependencies) }
+            is DetailIntent.ToggleFavorite -> handleToggleFavorite()
+            is DetailIntent.ToggleStar -> handleToggleStar()
         }
     }
 
@@ -62,21 +98,118 @@ class RepoDetailsViewModel @Inject constructor(
             try {
                 val readmeDeferred = async { getRepoDetailsUseCase(name = name, owner = owner) }
                 val sparklineDeferred = async { sparklineDataSource.getWeeklyCommits(owner, name) }
+                val contributorDeferred = async { contributorDataSource.getContributorCount(owner, name) }
 
                 val markdown = readmeDeferred.await()
                 val weeklyCommits = sparklineDeferred.await()
+                val contributorCount = contributorDeferred.await()
 
                 rawMarkdown = markdown
-                L.d(TAG, "markdown fetched — ${markdown?.length ?: 0} chars")
+                L.d(TAG, "markdown fetched — ${markdown?.length ?: 0} chars, contributors=$contributorCount")
 
                 val html = withContext(Dispatchers.Default) {
                     markdownToHtml(markdown, owner, name)
                 }
                 L.d(TAG, "html rendered — ${html?.length ?: 0} chars")
-                _uiState.update { it.copy(readmeHtml = html, isLoading = false, weeklyCommits = weeklyCommits) }
+                _uiState.update {
+                    it.copy(
+                        readmeHtml = html,
+                        isLoading = false,
+                        weeklyCommits = weeklyCommits,
+                        contributorCount = contributorCount,
+                    )
+                }
             } catch (e: Exception) {
                 L.e(TAG, "handleLoadDetails FAILED: ${e.message}", e)
                 _uiState.update { it.copy(error = e.message, isLoading = false) }
+            }
+        }
+    }
+
+    private fun handleToggleFavorite() {
+        val repo = currentRepo ?: return
+        viewModelScope.launch {
+            favoriteRepository.toggleFavorite(repo, _uiState.value.readmeHtml)
+        }
+    }
+
+    private fun handleToggleStar() {
+        val repo = currentRepo ?: return
+        viewModelScope.launch {
+            val result = starDataSource.toggleStar(repo.ownerLogin, repo.name)
+            if (result != null) {
+                _uiState.update { it.copy(isStarred = result) }
+            }
+        }
+    }
+
+    private fun handleLoadDependencies() {
+        val repo = currentRepo ?: return
+        if (_uiState.value.isDependenciesLoading) return
+        _uiState.update { it.copy(isDependenciesLoading = true, showDependencies = true) }
+        viewModelScope.launch {
+            try {
+                val data = apolloRepoDataSource.getRepositoryDependencies(
+                    owner = repo.ownerLogin,
+                    name = repo.name,
+                )
+                val repository = data.repository
+                val infos = mutableListOf<DependencyInfo>()
+                if (repository != null) {
+                    repository.packageJson?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parsePackageJson(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("npm", "package.json", deps))
+                    }
+                    repository.buildGradleKts?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parseBuildGradle(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("Gradle", "build.gradle.kts", deps))
+                    }
+                    repository.buildGradle?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parseBuildGradle(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("Gradle", "build.gradle", deps))
+                    }
+                    repository.requirementsTxt?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parseRequirementsTxt(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("pip", "requirements.txt", deps))
+                    }
+                    repository.cargoToml?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parseCargoToml(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("Cargo", "Cargo.toml", deps))
+                    }
+                    repository.goMod?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parseGoMod(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("Go", "go.mod", deps))
+                    }
+                    repository.gemfile?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parseGemfile(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("RubyGems", "Gemfile", deps))
+                    }
+                    repository.pubspecYaml?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parsePubspecYaml(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("pub", "pubspec.yaml", deps))
+                    }
+                    repository.pomXml?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parsePomXml(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("Maven", "pom.xml", deps))
+                    }
+                    repository.podfile?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parsePodfile(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("CocoaPods", "Podfile", deps))
+                    }
+                    repository.composerJson?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parseComposerJson(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("Composer", "composer.json", deps))
+                    }
+                    repository.packageSwift?.onBlob?.text?.let { text ->
+                        val deps = DependencyParser.parsePackageSwift(text)
+                        if (deps.isNotEmpty()) infos.add(DependencyInfo("Swift PM", "Package.swift", deps))
+                    }
+                }
+                L.d(TAG, "dependencies loaded — ${infos.size} ecosystems")
+                _uiState.update { it.copy(dependencyInfos = infos, isDependenciesLoading = false) }
+            } catch (e: Exception) {
+                L.e(TAG, "handleLoadDependencies FAILED: ${e.message}", e)
+                _uiState.update { it.copy(isDependenciesLoading = false) }
             }
         }
     }

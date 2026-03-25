@@ -18,7 +18,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.rsav.githubPublicRepoBrowser.R
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -28,7 +30,7 @@ fun SearchBar(
     onQueryChanged: (String) -> Unit,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Search repositories...",
+    placeholder: String = stringResource(R.string.search_placeholder),
     trailingIcons: @Composable (RowScope.() -> Unit) = {},
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -50,7 +52,7 @@ fun SearchBar(
                         IconButton(onClick = { expanded = false }) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = stringResource(R.string.back),
                             )
                         }
                     } else {
@@ -61,7 +63,7 @@ fun SearchBar(
                     Row {
                         if (query.isNotEmpty()) {
                             IconButton(onClick = { onQueryChanged(""); onSearch() }) {
-                                Icon(Icons.Default.Close, contentDescription = "Clear")
+                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.clear))
                             }
                         }
                         trailingIcons()

@@ -25,6 +25,8 @@ paging = "3.3.6"
 navigationCompose = "2.9.0"
 kotlinxSerializationJson = "1.8.1"
 okhttp = "4.12.0"
+room = "2.7.1"
+browser = "1.8.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -62,6 +64,10 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 commonmark = { group = "org.commonmark", name = "commonmark", version.ref = "commonmark" }
 androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastorePreferences" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "browser" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

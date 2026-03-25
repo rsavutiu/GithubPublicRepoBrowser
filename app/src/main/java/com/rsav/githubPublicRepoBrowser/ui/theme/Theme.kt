@@ -1,58 +1,75 @@
 package com.rsav.githubPublicRepoBrowser.ui.theme
 
-import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+private val GitHubDarkColorScheme = darkColorScheme(
+    primary = GhGreenDark,
+    onPrimary = GhOnGreenDark,
+    primaryContainer = GhGreenContainerDark,
+    onPrimaryContainer = GhOnGreenContainerDark,
+    secondary = GhBlueDark,
+    onSecondary = GhOnBlueDark,
+    secondaryContainer = GhBlueContainerDark,
+    onSecondaryContainer = GhOnBlueContainerDark,
+    tertiary = GhCoralDark,
+    onTertiary = GhOnCoralDark,
+    tertiaryContainer = GhCoralContainerDark,
+    onTertiaryContainer = GhOnCoralContainerDark,
+    error = GhCoralDark,
+    onError = GhOnCoralDark,
+    errorContainer = GhCoralContainerDark,
+    onErrorContainer = GhOnCoralContainerDark,
+    background = GhBgDark,
+    onBackground = GhOnBgDark,
+    surface = GhSurfaceDark,
+    onSurface = GhOnSurfaceDark,
+    surfaceVariant = GhSurfaceVariantDark,
+    onSurfaceVariant = GhOnSurfaceVariantDark,
+    outline = GhOutlineDark,
+    outlineVariant = GhOutlineVariantDark,
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+private val GitHubLightColorScheme = lightColorScheme(
+    primary = GhGreenLight,
+    onPrimary = GhOnGreenLight,
+    primaryContainer = GhGreenContainerLight,
+    onPrimaryContainer = GhOnGreenContainerLight,
+    secondary = GhBlueLight,
+    onSecondary = GhOnBlueLight,
+    secondaryContainer = GhBlueContainerLight,
+    onSecondaryContainer = GhOnBlueContainerLight,
+    tertiary = GhCoralLight,
+    onTertiary = GhOnCoralLight,
+    tertiaryContainer = GhCoralContainerLight,
+    onTertiaryContainer = GhOnCoralContainerLight,
+    error = GhCoralLight,
+    onError = GhOnCoralLight,
+    errorContainer = GhCoralContainerLight,
+    onErrorContainer = GhOnCoralContainerLight,
+    background = GhBgLight,
+    onBackground = GhOnBgLight,
+    surface = GhSurfaceLight,
+    onSurface = GhOnSurfaceLight,
+    surfaceVariant = GhSurfaceVariantLight,
+    onSurfaceVariant = GhOnSurfaceVariantLight,
+    outline = GhOutlineLight,
+    outlineVariant = GhOutlineVariantLight,
 )
 
 @Composable
 fun MyApplicationTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val colorScheme = if (darkTheme) GitHubDarkColorScheme else GitHubLightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        content = content
+        content = content,
     )
 }

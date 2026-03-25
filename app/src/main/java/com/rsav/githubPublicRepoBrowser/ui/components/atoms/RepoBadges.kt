@@ -41,9 +41,10 @@ data class RepoBadge(
 fun RepoBadges(
     repo: Repo,
     modifier: Modifier = Modifier,
+    contributorCount: Int? = null,
 ) {
-    val badges = remember(repo.id, repo.stargazerCount, repo.forkCount, repo.updatedAt, repo.openIssuesCount, repo.closedIssuesCount) {
-        buildBadges(repo)
+    val badges = remember(repo.id, repo.stargazerCount, repo.forkCount, repo.updatedAt, repo.openIssuesCount, repo.closedIssuesCount, contributorCount) {
+        buildBadges(repo, contributorCount)
     }
 
     if (badges.isEmpty()) return
@@ -80,7 +81,7 @@ private fun BadgeItem(badge: RepoBadge) {
     }
 }
 
-private fun buildBadges(repo: Repo): List<RepoBadge> {
+private fun buildBadges(repo: Repo, contributorCount: Int? = null): List<RepoBadge> {
     val badges = mutableListOf<RepoBadge>()
 
     // Popularity badge
@@ -146,6 +147,21 @@ private fun buildBadges(repo: Repo): List<RepoBadge> {
         if (forkRatio > 0.3f) {
             badges.add(
                 RepoBadge("${formatBadgeCount(repo.forkCount)} forks", Icons.Default.TrendingUp, Color(0xFF2196F3))
+            )
+        }
+    }
+
+    // Contributor count / bus factor
+    if (contributorCount != null) {
+        when {
+            contributorCount <= 2 && repo.stargazerCount >= 1000 -> badges.add(
+                RepoBadge("$contributorCount contrib \u26A0\uFE0F bus factor", Icons.Default.Warning, Color(0xFFFF9800))
+            )
+            contributorCount >= 100 -> badges.add(
+                RepoBadge("${formatBadgeCount(contributorCount)} contributors", Icons.Default.TrendingUp, Color(0xFF4CAF50))
+            )
+            contributorCount > 0 -> badges.add(
+                RepoBadge("$contributorCount contributors", Icons.Default.TrendingUp, Color(0xFF78909C))
             )
         }
     }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Code
@@ -38,6 +39,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -46,6 +48,7 @@ import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.rsav.githubPublicRepoBrowser.R
 import com.rsav.githubPublicRepoBrowser.domain.model.PROGRAMMING_LANGUAGES
 import com.rsav.githubPublicRepoBrowser.domain.model.ProgrammingLanguage
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
@@ -68,6 +71,7 @@ import kotlinx.coroutines.flow.flowOf
 fun RepoSearchScreen(
     modifier: Modifier = Modifier,
     onNavigateToDetail: (Repo) -> Unit,
+    onNavigateToFavorites: () -> Unit = {},
     viewModel: RepoSearchViewModel = hiltViewModel(),
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
@@ -88,6 +92,8 @@ fun RepoSearchScreen(
         uiState = uiState,
         repos = repos,
         onIntent = viewModel::onIntent,
+        onLoadContributorCount = viewModel::getContributorCount,
+        onNavigateToFavorites = onNavigateToFavorites,
         animatedVisibilityScope = animatedVisibilityScope,
         sharedTransitionScope = sharedTransitionScope,
     )
@@ -105,6 +111,8 @@ fun RepoSearchContent(
     repos: LazyPagingItems<Repo>,
     onIntent: (SearchIntent) -> Unit,
     modifier: Modifier = Modifier,
+    onLoadContributorCount: (suspend (owner: String, repo: String) -> Int?)? = null,
+    onNavigateToFavorites: () -> Unit = {},
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
 ) {
@@ -138,25 +146,25 @@ fun RepoSearchContent(
     // Language picker bottom sheets
     if (uiState.showLanguagePicker) {
         LanguagePickerSheet(
-            title = "Programming Language",
+            title = stringResource(R.string.prog_language_title),
             items = PROGRAMMING_LANGUAGES,
             selected = uiState.selectedLanguage,
             itemLabel = { it.name },
             onSelect = { onIntent(SearchIntent.ProgrammingLanguageSelected(it)) },
             onDismiss = { onIntent(SearchIntent.DismissPicker) },
-            searchPlaceholder = "Search languages...",
+            searchPlaceholder = stringResource(R.string.search_languages_placeholder),
         )
     }
 
     if (uiState.showSpokenLanguagePicker) {
         LanguagePickerSheet(
-            title = "Spoken Language",
+            title = stringResource(R.string.spoken_language_title),
             items = SPOKEN_LANGUAGES,
             selected = uiState.selectedSpokenLanguage,
             itemLabel = { it.name },
             onSelect = { onIntent(SearchIntent.SpokenLanguageSelected(it)) },
             onDismiss = { onIntent(SearchIntent.DismissPicker) },
-            searchPlaceholder = "Search languages...",
+            searchPlaceholder = stringResource(R.string.search_languages_placeholder),
         )
     }
 
@@ -172,16 +180,16 @@ fun RepoSearchContent(
     uiState.savedSearchPendingDelete?.let { pending ->
         AlertDialog(
             onDismissRequest = { onIntent(SearchIntent.DismissDeleteSavedSearch) },
-            title = { Text("Delete Saved Search") },
-            text = { Text("Delete \"${pending.name}\"?") },
+            title = { Text(stringResource(R.string.delete_saved_search_title)) },
+            text = { Text(stringResource(R.string.delete_saved_search_confirm, pending.name)) },
             confirmButton = {
                 TextButton(onClick = { onIntent(SearchIntent.ConfirmDeleteSavedSearch) }) {
-                    Text("Delete")
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { onIntent(SearchIntent.DismissDeleteSavedSearch) }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             },
         )
@@ -203,20 +211,26 @@ fun RepoSearchContent(
                         IconButton(onClick = { onIntent(SearchIntent.ShowSaveSearchDialog) }) {
                             Icon(
                                 imageVector = Icons.Default.BookmarkAdd,
-                                contentDescription = "Save current search",
+                                contentDescription = stringResource(R.string.save_current_search_desc),
                             )
                         }
                     }
                     IconButton(onClick = { onIntent(SearchIntent.ShowLanguagePicker) }) {
                         Icon(
                             imageVector = Icons.Default.Code,
-                            contentDescription = "Filter by programming language",
+                            contentDescription = stringResource(R.string.filter_prog_lang_desc),
                         )
                     }
                     IconButton(onClick = { onIntent(SearchIntent.ShowSpokenLanguagePicker) }) {
                         Icon(
                             imageVector = Icons.Default.Translate,
-                            contentDescription = "Filter by spoken language",
+                            contentDescription = stringResource(R.string.filter_spoken_lang_desc),
+                        )
+                    }
+                    IconButton(onClick = onNavigateToFavorites) {
+                        Icon(
+                            imageVector = Icons.Default.Bookmark,
+                            contentDescription = "Favorites",
                         )
                     }
                 },
@@ -245,7 +259,7 @@ fun RepoSearchContent(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Delete saved search",
+                                        contentDescription = stringResource(R.string.delete_saved_search_desc),
                                         modifier = Modifier.size(18.dp),
                                     )
                                 }
@@ -273,7 +287,7 @@ fun RepoSearchContent(
                                 onIntent(SearchIntent.TrendingPeriodChanged(null))
                             }
                         },
-                        label = { Text(period.label) },
+                        label = { Text(stringResource(period.labelRes)) },
                     )
                 }
 
@@ -292,7 +306,7 @@ fun RepoSearchContent(
                         trailingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Remove language filter",
+                                contentDescription = stringResource(R.string.remove_lang_filter_desc),
                                 modifier = Modifier.size(18.dp),
                             )
                         },
@@ -314,7 +328,7 @@ fun RepoSearchContent(
                         trailingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Remove spoken language filter",
+                                contentDescription = stringResource(R.string.remove_spoken_lang_filter_desc),
                                 modifier = Modifier.size(18.dp),
                             )
                         },
@@ -336,7 +350,7 @@ fun RepoSearchContent(
                         trailingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Remove topic filter",
+                                contentDescription = stringResource(R.string.remove_topic_filter_desc),
                                 modifier = Modifier.size(18.dp),
                             )
                         },
@@ -363,7 +377,7 @@ fun RepoSearchContent(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = error.localizedMessage ?: "Unknown error",
+                            text = error.localizedMessage ?: stringResource(R.string.unknown_error),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodyLarge,
                         )
@@ -376,7 +390,7 @@ fun RepoSearchContent(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = "No repositories found",
+                            text = stringResource(R.string.no_repos_found),
                             style = MaterialTheme.typography.bodyLarge,
                         )
                     }
@@ -388,6 +402,7 @@ fun RepoSearchContent(
                         repos = repos,
                         onRepoClick = { onIntent(SearchIntent.RepoClicked(it)) },
                         onTopicClick = { onIntent(SearchIntent.TopicSelected(it)) },
+                        onLoadContributorCount = onLoadContributorCount,
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope,
                     )

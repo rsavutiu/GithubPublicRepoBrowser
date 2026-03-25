@@ -29,6 +29,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "GITHUB_TOKEN", "\"${localProperties.getProperty("github.token", "")}\"")
+        buildConfigField("String", "GITHUB_CLIENT_ID", "\"${localProperties.getProperty("github.client.id", "")}\"")
+        buildConfigField("String", "GITHUB_CLIENT_SECRET", "\"${localProperties.getProperty("github.client.secret", "")}\"")
     }
 
     buildTypes {
@@ -106,6 +108,14 @@ dependencies {
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)
+
+    // Room
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // Browser (Chrome Custom Tabs for OAuth)
+    implementation(libs.androidx.browser)
 
     // Paging 3
     implementation(libs.androidx.paging.runtime)

@@ -1,0 +1,40 @@
+query RepositoryDependencies($owner: String!, $name: String!) {
+    repository(owner: $owner, name: $name) {
+        packageJson: object(expression: "HEAD:package.json") {
+            ... on Blob { text }
+        }
+        buildGradleKts: object(expression: "HEAD:build.gradle.kts") {
+            ... on Blob { text }
+        }
+        buildGradle: object(expression: "HEAD:build.gradle") {
+            ... on Blob { text }
+        }
+        requirementsTxt: object(expression: "HEAD:requirements.txt") {
+            ... on Blob { text }
+        }
+        cargoToml: object(expression: "HEAD:Cargo.toml") {
+            ... on Blob { text }
+        }
+        goMod: object(expression: "HEAD:go.mod") {
+            ... on Blob { text }
+        }
+        gemfile: object(expression: "HEAD:Gemfile") {
+            ... on Blob { text }
+        }
+        pubspecYaml: object(expression: "HEAD:pubspec.yaml") {
+            ... on Blob { text }
+        }
+        pomXml: object(expression: "HEAD:pom.xml") {
+            ... on Blob { text }
+        }
+        podfile: object(expression: "HEAD:Podfile") {
+            ... on Blob { text }
+        }
+        composerJson: object(expression: "HEAD:composer.json") {
+            ... on Blob { text }
+        }
+        packageSwift: object(expression: "HEAD:Package.swift") {
+            ... on Blob { text }
+        }
+    }
+}

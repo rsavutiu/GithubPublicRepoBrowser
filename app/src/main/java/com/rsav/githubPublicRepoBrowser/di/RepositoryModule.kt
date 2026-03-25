@@ -4,6 +4,8 @@ import com.rsav.githubPublicRepoBrowser.data.local.SavedSearchDataStore
 import com.rsav.githubPublicRepoBrowser.data.repository.DelegatingDetailsRepository
 import com.rsav.githubPublicRepoBrowser.data.repository.DelegatingSearchRepository
 import com.rsav.githubPublicRepoBrowser.data.repository.DelegatingUserProfileRepository
+import com.rsav.githubPublicRepoBrowser.data.repository.FavoriteRepositoryImpl
+import com.rsav.githubPublicRepoBrowser.domain.repository.IFavoriteRepository
 import com.rsav.githubPublicRepoBrowser.domain.repository.IRepositoryDetails
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISavedSearchRepository
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
@@ -33,4 +35,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindUserProfileRepository(impl: DelegatingUserProfileRepository): IUserProfileRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFavoriteRepository(impl: FavoriteRepositoryImpl): IFavoriteRepository
 }

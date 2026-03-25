@@ -2,6 +2,7 @@ package com.rsav.githubPublicRepoBrowser.data.remote
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
+import com.rsav.githubPublicRepoBrowser.RepositoryDependenciesQuery
 import com.rsav.githubPublicRepoBrowser.RepositoryDetailsQuery
 import com.rsav.githubPublicRepoBrowser.SearchRepositoriesQuery
 import com.rsav.githubPublicRepoBrowser.UserProfileQuery
@@ -74,6 +75,29 @@ class ApolloRepoDataSource @Inject constructor(
             L.e(TAG, "getUserProfile — null data")
         }
         L.d(TAG, "getUserProfile OK — user=${data.user?.login}")
+        return data
+    }
+
+    suspend fun getRepositoryDependencies(
+        owner: String,
+        name: String,
+    ): RepositoryDependenciesQuery.Data {
+        L.d(TAG, "getRepositoryDependencies(owner=$owner, name=$name)")
+        val response = apolloClient.query(
+            RepositoryDependenciesQuery(
+                owner = owner,
+                name = name,
+            )
+        ).execute()
+        if (response.hasErrors()) {
+            val msg = response.errors?.firstOrNull()?.message ?: "Unknown GraphQL error"
+            L.e(TAG, "getRepositoryDependencies ERROR: $msg")
+            throw ApolloQueryException(msg)
+        }
+        val data = response.data ?: throw ApolloQueryException("No data returned").also {
+            L.e(TAG, "getRepositoryDependencies — null data")
+        }
+        L.d(TAG, "getRepositoryDependencies OK — hasRepo=${data.repository != null}")
         return data
     }
 

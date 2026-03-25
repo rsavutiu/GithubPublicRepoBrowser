@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.screen.detail.RepoDetailScreen
+import com.rsav.githubPublicRepoBrowser.ui.screen.favorites.FavoritesScreen
 import com.rsav.githubPublicRepoBrowser.ui.screen.search.RepoSearchScreen
 import com.rsav.githubPublicRepoBrowser.ui.screen.userrepos.UserReposScreen
 import com.rsav.githubPublicRepoBrowser.util.L
@@ -57,6 +58,10 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                         val json = Json.encodeToString<Repo>(repo)
                         navController.navigate(DetailRoute(repoJson = json))
                     },
+                    onNavigateToFavorites = {
+                        L.d(TAG, "navigating to favorites")
+                        navController.navigate(FavoritesRoute)
+                    },
                     modifier = modifier,
                     viewModel = viewModel,
                     animatedVisibilityScope = this@composable,
@@ -92,6 +97,24 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                     modifier = modifier,
                     animatedVisibilityScope = this@composable,
                     sharedTransitionScope = this@SharedTransitionLayout,
+                )
+            }
+
+            composable<FavoritesRoute>(
+                enterTransition = { fadeIn(tween(FADE_DURATION_MS)) },
+                popExitTransition = { fadeOut(tween(FADE_DURATION_MS)) },
+            ) {
+                FavoritesScreen(
+                    onNavigateBack = {
+                        L.d(TAG, "navigateUp from favorites")
+                        navController.navigateUp()
+                    },
+                    onRepoClick = { repo ->
+                        L.d(TAG, "navigating to detail from favorites: ${repo.nameWithOwner}")
+                        val json = Json.encodeToString<Repo>(repo)
+                        navController.navigate(DetailRoute(repoJson = json))
+                    },
+                    modifier = modifier,
                 )
             }
 

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import com.rsav.githubPublicRepoBrowser.data.remote.ContributorDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.PROGRAMMING_LANGUAGES
 import com.rsav.githubPublicRepoBrowser.domain.model.ProgrammingLanguage
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
@@ -46,6 +47,7 @@ private data class SearchParams(
 class RepoSearchViewModel @Inject constructor(
     private val searchReposUseCase: SearchReposUseCase,
     private val savedSearchRepository: ISavedSearchRepository,
+    private val contributorDataSource: ContributorDataSource,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -193,6 +195,9 @@ class RepoSearchViewModel @Inject constructor(
             _sideEffects.send(SearchSideEffect.NavigateToDetail(repo))
         }
     }
+
+    suspend fun getContributorCount(owner: String, repo: String): Int? =
+        contributorDataSource.getContributorCount(owner, repo)
 
     companion object {
         private const val TAG = "SearchVM"

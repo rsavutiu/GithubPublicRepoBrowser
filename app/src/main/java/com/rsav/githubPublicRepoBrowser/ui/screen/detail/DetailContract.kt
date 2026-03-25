@@ -1,6 +1,7 @@
 package com.rsav.githubPublicRepoBrowser.ui.screen.detail
 
 import androidx.compose.runtime.Immutable
+import com.rsav.githubPublicRepoBrowser.domain.model.DependencyInfo
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AiProvider
 
 sealed interface DetailIntent {
@@ -10,6 +11,10 @@ sealed interface DetailIntent {
     data object RequestAskAi : DetailIntent
     data class ConfirmAskAi(val provider: AiProvider) : DetailIntent
     data object DismissAskAi : DetailIntent
+    data object LoadDependencies : DetailIntent
+    data object ToggleDependencies : DetailIntent
+    data object ToggleFavorite : DetailIntent
+    data object ToggleStar : DetailIntent
 }
 
 @Immutable
@@ -18,7 +23,14 @@ data class DetailUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val weeklyCommits: List<Int> = emptyList(),
+    val contributorCount: Int? = null,
     val showAiPicker: Boolean = false,
+    val dependencyInfos: List<DependencyInfo> = emptyList(),
+    val isDependenciesLoading: Boolean = false,
+    val showDependencies: Boolean = false,
+    val isFavorite: Boolean = false,
+    val isStarred: Boolean? = null, // null = unknown (not logged in or loading)
+    val isLoggedIn: Boolean = false,
 )
 
 sealed interface DetailSideEffect {

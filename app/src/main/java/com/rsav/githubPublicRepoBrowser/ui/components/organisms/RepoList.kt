@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +31,7 @@ fun RepoList(
     repos: LazyPagingItems<Repo>,
     onRepoClick: (Repo) -> Unit = {},
     onTopicClick: (String) -> Unit = {},
+    onLoadContributorCount: (suspend (owner: String, repo: String) -> Int?)? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
 ) {
@@ -53,10 +55,18 @@ fun RepoList(
             ) { index ->
                 val repo = repos[index]
                 if (repo != null) {
+                    val contributorCount = if (onLoadContributorCount != null) {
+                        val state = produceState<Int?>(null, repo.ownerLogin, repo.name) {
+                            value = onLoadContributorCount(repo.ownerLogin, repo.name)
+                        }
+                        state.value
+                    } else null
+
                     RepoCardSimple(
                         repo = repo,
                         onClick = onRepoClick,
                         onTopicClick = onTopicClick,
+                        contributorCount = contributorCount,
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope,
                     )

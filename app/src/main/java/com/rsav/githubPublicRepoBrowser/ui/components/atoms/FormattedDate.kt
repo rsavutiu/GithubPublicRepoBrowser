@@ -5,7 +5,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import com.rsav.githubPublicRepoBrowser.R
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -26,7 +28,7 @@ fun formatIsoDate(iso: String): String {
 fun FormattedDate(
     isoDate: String,
     modifier: Modifier = Modifier,
-    prefix: String = "Created ",
+    prefix: String = stringResource(R.string.created_prefix),
     style: TextStyle = MaterialTheme.typography.labelSmall,
 ) {
     val formatted = remember(isoDate) { formatIsoDate(isoDate) }
