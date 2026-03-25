@@ -6,6 +6,8 @@ import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AiProvider
 sealed interface DetailIntent {
     data class LoadDetails(val name: String, val owner: String) : DetailIntent
     data class OpenUrl(val url: String) : DetailIntent
+    data object ShareRepo : DetailIntent
+    data object ToggleSave : DetailIntent
     data object NavigateBack : DetailIntent
     data object RequestAskAi : DetailIntent
     data class ConfirmAskAi(val provider: AiProvider) : DetailIntent
@@ -19,10 +21,12 @@ data class DetailUiState(
     val error: String? = null,
     val weeklyCommits: List<Int> = emptyList(),
     val showAiPicker: Boolean = false,
+    val isSaved: Boolean = false,
 )
 
 sealed interface DetailSideEffect {
     data class OpenBrowser(val url: String) : DetailSideEffect
+    data class ShareUrl(val url: String) : DetailSideEffect
     data object NavigateBack : DetailSideEffect
     data class LaunchAi(val provider: AiProvider, val prompt: String) : DetailSideEffect
 }

@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rsav.githubPublicRepoBrowser.data.remote.SparklineDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
+import com.rsav.githubPublicRepoBrowser.domain.model.SavedSearch
+import com.rsav.githubPublicRepoBrowser.domain.repository.ISavedSearchRepository
 import com.rsav.githubPublicRepoBrowser.domain.usecase.GetRepoDetailsUseCase
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AiProvider
 import com.rsav.githubPublicRepoBrowser.util.L
@@ -14,6 +16,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -26,6 +29,7 @@ import javax.inject.Inject
 class RepoDetailsViewModel @Inject constructor(
     private val getRepoDetailsUseCase: GetRepoDetailsUseCase,
     private val sparklineDataSource: SparklineDataSource,
+    private val savedSearchRepository: ISavedSearchRepository,
     private val parser: Parser,
     private val htmlRenderer: HtmlRenderer,
 ) : ViewModel() {
@@ -39,8 +43,23 @@ class RepoDetailsViewModel @Inject constructor(
     private var currentRepo: Repo? = null
     private var rawMarkdown: String? = null
 
+    init {
+        viewModelScope.launch {
+            savedSearchRepository.getSavedSearches().collect { searches ->
+                updateSavedStatus(searches)
+            }
+        }
+    }
+
     fun setRepo(repo: Repo) {
         currentRepo = repo
+    }
+
+    private fun updateSavedStatus(savedSearches: List<SavedSearch>) {
+        val repo = currentRepo ?: return
+        val repoQuery = "repo:${repo.nameWithOwner}"
+        val isSaved = savedSearches.any { it.query == repoQuery }
+        _uiState.update { it.copy(isSaved = isSaved) }
     }
 
     fun onIntent(intent: DetailIntent) {
@@ -48,10 +67,41 @@ class RepoDetailsViewModel @Inject constructor(
         when (intent) {
             is DetailIntent.LoadDetails -> handleLoadDetails(intent.name, intent.owner)
             is DetailIntent.OpenUrl -> handleSideEffect(DetailSideEffect.OpenBrowser(intent.url))
+            is DetailIntent.ShareRepo -> handleShareRepo()
+            is DetailIntent.ToggleSave -> handleToggleSave()
             is DetailIntent.NavigateBack -> handleSideEffect(DetailSideEffect.NavigateBack)
             is DetailIntent.RequestAskAi -> _uiState.update { it.copy(showAiPicker = true) }
             is DetailIntent.DismissAskAi -> _uiState.update { it.copy(showAiPicker = false) }
             is DetailIntent.ConfirmAskAi -> handleAskAi(intent.provider)
+        }
+    }
+
+    private fun handleShareRepo() {
+        currentRepo?.let {
+            handleSideEffect(DetailSideEffect.ShareUrl(it.url))
+        }
+    }
+
+    private fun handleToggleSave() {
+        val repo = currentRepo ?: return
+        val repoQuery = "repo:${repo.nameWithOwner}"
+        viewModelScope.launch {
+            val savedSearches = savedSearchRepository.getSavedSearches().first()
+            val existing = savedSearches.find { it.query == repoQuery }
+            if (existing != null) {
+                savedSearchRepository.deleteSavedSearch(existing.id)
+            } else {
+                savedSearchRepository.addSavedSearch(
+                    SavedSearch(
+                        id = java.util.UUID.randomUUID().toString(),
+                        name = repo.nameWithOwner,
+                        query = repoQuery,
+                        trendingPeriodName = null,
+                        programmingLanguageName = null,
+                        spokenLanguageCode = null,
+                    )
+                )
+            }
         }
     }
 

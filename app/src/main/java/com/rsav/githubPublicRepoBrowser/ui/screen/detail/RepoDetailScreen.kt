@@ -27,8 +27,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -49,12 +52,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.rsav.githubPublicRepoBrowser.R
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AI_PROVIDERS
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AiProvider
@@ -70,6 +75,7 @@ import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 
 private const val SHARED_ANIM_MS = 1000
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun RepoDetailScreen(
     modifier: Modifier = Modifier,
@@ -96,6 +102,13 @@ fun RepoDetailScreen(
                     val intent = Intent(Intent.ACTION_VIEW, effect.url.toUri())
                     context.startActivity(intent)
                 }
+                is DetailSideEffect.ShareUrl -> {
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_repo_text, effect.url))
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share_desc)))
+                }
                 is DetailSideEffect.NavigateBack -> onNavigateBack()
                 is DetailSideEffect.LaunchAi -> {
                     launchAiProvider(context, effect.provider, effect.prompt)
@@ -104,45 +117,33 @@ fun RepoDetailScreen(
         }
     }
 
-    RepoDetailContent(
-        modifier = modifier,
-        repo = repo,
-        uiState = uiState,
-        onIntent = detailsViewModel::onIntent,
-        onTopicClick = onTopicClick,
-        onOwnerClick = onOwnerClick,
-        animatedVisibilityScope = animatedVisibilityScope,
-        sharedTransitionScope = sharedTransitionScope,
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class, ExperimentalLayoutApi::class)
-@Composable
-fun RepoDetailContent(
-    modifier: Modifier = Modifier,
-    repo: Repo,
-    uiState: DetailUiState,
-    onIntent: (DetailIntent) -> Unit = {},
-    onTopicClick: (String) -> Unit = {},
-    onOwnerClick: (String) -> Unit = {},
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
-    sharedTransitionScope: SharedTransitionScope? = null,
-) {
-    val context = LocalContext.current
-
     Scaffold(
         modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { Text(repo.name) },
                 navigationIcon = {
-                    IconButton(onClick = { onIntent(DetailIntent.NavigateBack) }) {
+                    IconButton(onClick = { detailsViewModel.onIntent(DetailIntent.NavigateBack) }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
+                actions = {
+                    IconButton(onClick = { detailsViewModel.onIntent(DetailIntent.ToggleSave) }) {
+                        Icon(
+                            imageVector = if (uiState.isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                            contentDescription = if (uiState.isSaved) stringResource(R.string.unsave_repo_desc) else stringResource(R.string.save_repo_desc),
+                        )
+                    }
+                    IconButton(onClick = { detailsViewModel.onIntent(DetailIntent.ShareRepo) }) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = stringResource(R.string.share_desc),
+                        )
+                    }
+                }
             )
         },
         bottomBar = {
@@ -158,26 +159,26 @@ fun RepoDetailContent(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Button(
-                        onClick = { onIntent(DetailIntent.OpenUrl(repo.url)) },
+                        onClick = { detailsViewModel.onIntent(DetailIntent.OpenUrl(repo.url)) },
                         modifier = Modifier.weight(1f),
                     ) {
                         Icon(
                             imageVector = Icons.Default.OpenInBrowser,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.open_in_browser_desc),
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("GitHub")
+                        Text(stringResource(R.string.github_button))
                     }
                     OutlinedButton(
-                        onClick = { onIntent(DetailIntent.RequestAskAi) },
+                        onClick = { detailsViewModel.onIntent(DetailIntent.RequestAskAi) },
                         modifier = Modifier.weight(1f),
                     ) {
                         Icon(
                             imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.ask_ai_title),
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Ask AI")
+                        Text(stringResource(R.string.ask_ai_button))
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -265,7 +266,7 @@ fun RepoDetailContent(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Gavel,
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.license_desc),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -303,13 +304,13 @@ fun RepoDetailContent(
 
             if (!repo.updatedAt.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                FormattedDate(prefix = "Last Update at:", isoDate = repo.updatedAt)
+                FormattedDate(prefix = stringResource(R.string.last_update_prefix), isoDate = repo.updatedAt)
             }
 
             if (uiState.weeklyCommits.size >= 2) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "Commit activity (last ${uiState.weeklyCommits.size} weeks)",
+                    text = stringResource(R.string.commit_activity_last_weeks, uiState.weeklyCommits.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -346,7 +347,7 @@ fun RepoDetailContent(
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            text = uiState.error,
+                            text = uiState.error ?: stringResource(R.string.unknown_error),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium,
                         )
@@ -368,9 +369,9 @@ fun RepoDetailContent(
         AiPickerDialog(
             context = context,
             onProviderSelected = { provider ->
-                onIntent(DetailIntent.ConfirmAskAi(provider))
+                detailsViewModel.onIntent(DetailIntent.ConfirmAskAi(provider))
             },
-            onDismiss = { onIntent(DetailIntent.DismissAskAi) },
+            onDismiss = { detailsViewModel.onIntent(DetailIntent.DismissAskAi) },
         )
     }
 }
@@ -390,11 +391,11 @@ private fun AiPickerDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.AutoAwesome,
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.ask_ai_title),
                     tint = MaterialTheme.colorScheme.primary,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Ask AI about this repo")
+                Text(stringResource(R.string.ask_ai_title))
             }
         },
         text = {
@@ -437,7 +438,7 @@ private fun AiPickerDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         },
     )
@@ -488,7 +489,7 @@ private fun AiProviderRow(
         if (!isInstalled) {
             Icon(
                 imageVector = Icons.Default.OpenInBrowser,
-                contentDescription = "Opens in browser",
+                contentDescription = stringResource(R.string.open_in_browser_desc),
                 modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -502,11 +503,8 @@ private fun RepoDetailScreenPreview(
     @PreviewParameter(SampleRepoProvider::class) repo: Repo,
 ) {
     MyApplicationTheme {
-        RepoDetailContent(
+        RepoDetailScreen(
             repo = repo,
-            uiState = DetailUiState(
-                readmeHtml = "<h1>Sample README</h1><p>This is a preview of the repository detail screen.</p>",
-            ),
         )
     }
 }

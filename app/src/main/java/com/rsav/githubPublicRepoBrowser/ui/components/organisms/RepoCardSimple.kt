@@ -22,14 +22,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import com.rsav.githubPublicRepoBrowser.R
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.FormattedDate
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
-import com.rsav.githubPublicRepoBrowser.ui.components.atoms.HealthScoreIndicator
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.RepoBadges
 import com.rsav.githubPublicRepoBrowser.ui.preview.SampleRepoProvider
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
@@ -93,13 +94,11 @@ fun RepoCardSimple(
                 }
 
                 Text(
-                    modifier = nameModifier.weight(1f),
+                    modifier = nameModifier,
                     text = repo.nameWithOwner,
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
-
-                HealthScoreIndicator(repo = repo)
             }
 
             if (!repo.description.isNullOrBlank()) {
@@ -119,7 +118,7 @@ fun RepoCardSimple(
 
             if (!repo.updatedAt.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                FormattedDate(prefix = "Last Update at: ", isoDate = repo.updatedAt)
+                FormattedDate(prefix = stringResource(R.string.last_update_prefix), isoDate = repo.updatedAt)
             }
 
             RepoBadges(repo = repo)

@@ -12,8 +12,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.rsav.githubPublicRepoBrowser.R
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 
 @Composable
@@ -27,7 +29,7 @@ fun ForkCount(
     ) {
         Icon(
             imageVector = Icons.Default.ForkRight,
-            contentDescription = "Forks",
+            contentDescription = stringResource(R.string.forks),
             modifier = Modifier.size(16.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
