@@ -1,30 +1,37 @@
 package com.rsav.githubPublicRepoBrowser.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
 import androidx.paging.PagingData
+import com.rsav.githubPublicRepoBrowser.data.paging.CachedRepoPagingSource
 import com.rsav.githubPublicRepoBrowser.data.remote.cached.CachedRepoDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
-import com.rsav.githubPublicRepoBrowser.domain.model.TrendingPeriod
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
 import com.rsav.githubPublicRepoBrowser.util.L
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 /**
- * Serves search results from the pre-cached GitHub Pages JSON.
- * Returns a single-page [PagingData] since the cached data is a flat list (≤30 repos).
- *
- * This implementation parses the query string built by [SearchReposUseCase] to determine
- * which cached JSON file to fetch (period-based or topic-based).
+ * Serves search results from the pre-cached GitHub Pages JSON via a proper [Pager],
+ * supporting pagination and pull-to-refresh.
  */
 class CachedSearchRepositoriesImpl @Inject constructor(
     private val dataSource: CachedRepoDataSource,
 ) : ISearchRepositories {
 
-    override fun searchRepositories(query: String): Flow<PagingData<Repo>> = flow {
+    override fun searchRepositories(query: String): Flow<PagingData<Repo>> {
         L.d(TAG, "searchRepositories(query=$query)")
-        val repos = fetchFromCache(query)
-        emit(PagingData.from(repos))
+        return Pager(
+            config = PagingConfig(
+                pageSize = PAGE_SIZE,
+                initialLoadSize = PAGE_SIZE,
+                enablePlaceholders = false,
+                prefetchDistance = PREFETCH_DISTANCE,
+            ),
+            pagingSourceFactory = {
+                CachedRepoPagingSource { fetchFromCache(query) }
+            },
+        ).flow
     }
 
     private suspend fun fetchFromCache(query: String): List<Repo> {
@@ -44,13 +51,11 @@ class CachedSearchRepositoriesImpl @Inject constructor(
 
     companion object {
         private const val TAG = "CachedSearchRepo"
+        private const val PAGE_SIZE = 20
+        private const val PREFETCH_DISTANCE = 4
         private val TOPIC_REGEX = Regex("""topic:(\S+)""")
         private val CREATED_REGEX = Regex("""created:>(\S+)""")
 
-        /**
-         * Determines the cache period name from the query's `created:>` date.
-         * Compares the date offset to [TrendingPeriod] thresholds.
-         */
         fun detectPeriod(query: String): String {
             val dateMatch = CREATED_REGEX.find(query) ?: return "weekly"
             val dateStr = dateMatch.groupValues[1]
@@ -68,15 +73,7 @@ class CachedSearchRepositoriesImpl @Inject constructor(
             }
         }
 
-        /**
-         * Returns true if the query can be served from the cache:
-         * - Must be a default trending query (stars:>5 + period) or a topic query
-         * - Must NOT have free-text search terms
-         */
         fun isCacheable(query: String): Boolean {
-            // Cache handles: "stars:>5 created:>{date} sort:stars" and "topic:X stars:>5 ..."
-            // Not cacheable if it has programming language filters or spoken language keywords
-            // that aren't part of the standard pattern
             val hasStarsFilter = "stars:>" in query
             val hasFreeText = query.replace(TOPIC_REGEX, "")
                 .replace(CREATED_REGEX, "")
@@ -85,10 +82,7 @@ class CachedSearchRepositoriesImpl @Inject constructor(
                 .replace(Regex("""language:\S+"""), "")
                 .trim()
                 .isNotEmpty()
-
-            // Language-filtered queries aren't cached (we only cache per-topic and per-period)
             val hasLanguageFilter = Regex("""language:\S+""").containsMatchIn(query)
-
             return hasStarsFilter && !hasFreeText && !hasLanguageFilter
         }
     }

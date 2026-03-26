@@ -30,8 +30,8 @@ class RestSearchRepositoriesImpl @Inject constructor(
 
     companion object {
         private const val TAG = "RestSearchRepo"
-        private const val PAGE_SIZE = 10
-        private const val INITIAL_LOAD_SIZE = 10
+        private const val PAGE_SIZE = 20
+        private const val INITIAL_LOAD_SIZE = 20
         private const val PREFETCH_DISTANCE = 4
     }
 }

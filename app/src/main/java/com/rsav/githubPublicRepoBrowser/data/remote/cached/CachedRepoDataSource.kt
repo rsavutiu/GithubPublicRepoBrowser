@@ -51,8 +51,7 @@ class CachedRepoDataSource @Inject constructor(
 
     companion object {
         private const val TAG = "CachedDataSource"
-        // TODO: Update with actual GitHub Pages URL after repo creation
-        const val BASE_URL = "https://rsavu.github.io/github-trending-cache/"
+        const val BASE_URL = "https://rsavutiu.github.io/github-trending-cache/"
     }
 }
 

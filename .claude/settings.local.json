@@ -60,7 +60,21 @@
       "Bash(adb -s ZY22KMNN65 shell \"cmd locale set-app-locales com.rsav.githubPublicRepoBrowser --locales ro\")",
       "Bash(adb -s ZY22KMNN65 uninstall com.rsav.githubPublicRepoBrowser)",
       "Bash(adb -s ZY22KMNN65 shell am start -n com.rsav.githubPublicRepoBrowser/.MainActivity)",
-      "Bash(find C:UsersrsavuAndroidStudioProjectsGithubPublicRepoBrowser/app/src/main -name *Database* -o -name *Entity* -o -name *Dao*)"
+      "Bash(find C:UsersrsavuAndroidStudioProjectsGithubPublicRepoBrowser/app/src/main -name *Database* -o -name *Entity* -o -name *Dao*)",
+      "Bash(gh api:*)",
+      "Bash(gh workflow:*)",
+      "Bash(gh run:*)",
+      "WebFetch(domain:rsavutiu.github.io)",
+      "Bash(curl -s \"https://rsavutiu.github.io/github-trending-cache/trending-weekly.json\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(f''''totalCount={d[\"\"totalCount\"\"]}, repos_in_array={len\\(d[\"\"repos\"\"]\\)}''''\\)\")",
+      "Bash(curl -s \"https://rsavutiu.github.io/github-trending-cache/trending-daily.json\")",
+      "Bash(curl -s \"https://rsavutiu.github.io/github-trending-cache/trending-yearly.json\")",
+      "Bash(claude mcp:*)",
+      "mcp__mcp-registry__search_mcp_registry",
+      "Bash(curl -s https://raw.githubusercontent.com/Drjacky/claude-android-ninja/main/README.md)",
+      "Bash(curl -s https://raw.githubusercontent.com/Drjacky/claude-android-ninja/master/README.md)",
+      "Bash(mkdir -p ~/.claude/skills)",
+      "Bash(git clone:*)"
     ]
   }
 }
