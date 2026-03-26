@@ -14,6 +14,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import java.net.Socket
+import javax.inject.Named
 import javax.inject.Singleton
 import javax.net.SocketFactory
 
@@ -63,6 +64,16 @@ object NetworkModule {
 
         override fun createSocket(address: java.net.InetAddress, port: Int, localAddress: java.net.InetAddress, localPort: Int): Socket =
             delegate.createSocket(address, port, localAddress, localPort).also { TrafficStats.tagSocket(it) }
+    }
+
+    @Provides
+    @Singleton
+    @Named("unauthenticated")
+    fun provideUnauthenticatedOkHttpClient(): OkHttpClient {
+        L.d(TAG, "Creating unauthenticated OkHttpClient (for GitHub Pages cache)")
+        return OkHttpClient.Builder()
+            .socketFactory(TaggedSocketFactory())
+            .build()
     }
 
     @Provides
