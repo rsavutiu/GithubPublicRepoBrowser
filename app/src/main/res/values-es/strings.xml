@@ -62,4 +62,41 @@
     <string name="dependencies_count">%1$d dependencias</string>
     <string name="dependencies_none">No se encontraron archivos de dependencias</string>
     <string name="dependencies_loading">Cargando dependencias\u2026</string>
+
+    <!-- Badges -->
+    <string name="badge_popular">Popular</string>
+    <string name="badge_active">Activo</string>
+    <string name="badge_inactive_years">Inactivo %1$da</string>
+    <string name="badge_stale">Obsoleto</string>
+    <string name="badge_no_license">Sin licencia</string>
+    <string name="badge_open_issues">%1$s issues abiertos</string>
+    <string name="badge_issues_resolved">Issues: %1$d%% resueltos</string>
+    <string name="badge_forks">%1$s forks</string>
+    <string name="badge_bus_factor">%1$d contrib \u26A0\uFE0F factor bus</string>
+    <plurals name="contributors_count">
+        <item quantity="one">%1$s colaborador</item>
+        <item quantity="other">%1$s colaboradores</item>
+    </plurals>
+
+    <!-- Detail screen -->
+    <string name="star_on_github_desc">Dar estrella en GitHub</string>
+    <string name="single_maintainer_risk">Riesgo de mantenedor único</string>
+    <string name="strong_community">Comunidad fuerte</string>
+    <plurals name="dependency_ecosystem">
+        <item quantity="one">%1$s (%2$s) \u2014 %3$d dependencia</item>
+        <item quantity="other">%1$s (%2$s) \u2014 %3$d dependencias</item>
+    </plurals>
+
+    <!-- Favorites screen -->
+    <string name="favorites_and_account">Favoritos y cuenta</string>
+    <string name="saved_repos_count">Repositorios guardados (%1$d)</string>
+    <string name="no_saved_repos">Aún no hay repositorios guardados</string>
+    <string name="no_saved_repos_hint">Toca el ícono de marcador en cualquier repositorio para guardarlo sin conexión</string>
+    <string name="github_account">Cuenta de GitHub</string>
+    <string name="logged_in_fallback">Sesión iniciada</string>
+    <string name="star_repos_hint">Puedes dar estrella a repositorios en GitHub</string>
+    <string name="logout">Cerrar sesión</string>
+    <string name="sign_in_hint">Inicia sesión para dar estrella a repositorios directamente en GitHub</string>
+    <string name="sign_in_github">Iniciar sesión con GitHub</string>
+    <string name="favorites_desc">Favoritos</string>
 </resources>

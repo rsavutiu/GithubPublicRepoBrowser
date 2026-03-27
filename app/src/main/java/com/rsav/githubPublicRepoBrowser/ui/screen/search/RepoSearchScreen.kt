@@ -307,7 +307,7 @@ private fun SearchToolbar(
             IconButton(onClick = onNavigateToFavorites) {
                 Icon(
                     imageVector = Icons.Default.Bookmark,
-                    contentDescription = "Favorites",
+                    contentDescription = stringResource(R.string.favorites_desc),
                 )
             }
         },

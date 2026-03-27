@@ -60,6 +60,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
@@ -174,7 +175,7 @@ fun RepoDetailContent(
                         IconButton(onClick = { onIntent(DetailIntent.ToggleStar) }) {
                             Icon(
                                 imageVector = if (uiState.isStarred == true) Icons.Default.Star else Icons.Default.StarBorder,
-                                contentDescription = "Star on GitHub",
+                                contentDescription = stringResource(R.string.star_on_github_desc),
                                 tint = if (uiState.isStarred == true) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
@@ -340,7 +341,7 @@ fun RepoDetailContent(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = "${uiState.contributorCount} contributors",
+                        text = pluralStringResource(R.plurals.contributors_count, uiState.contributorCount, uiState.contributorCount.toString()),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -355,14 +356,14 @@ fun RepoDetailContent(
                         )
                         Spacer(modifier = Modifier.width(2.dp))
                         Text(
-                            text = "Single maintainer risk",
+                            text = stringResource(R.string.single_maintainer_risk),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color(0xFFFF9800),
                         )
                     } else if (uiState.contributorCount >= 100) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Strong community",
+                            text = stringResource(R.string.strong_community),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -681,7 +682,7 @@ private fun DependenciesSection(
 private fun DependencyEcosystemSection(info: DependencyInfo) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "${info.ecosystem} (${info.sourceFile}) \u2014 ${info.dependencies.size} ${if (info.dependencies.size == 1) "dependency" else "dependencies"}",
+            text = pluralStringResource(R.plurals.dependency_ecosystem, info.dependencies.size, info.ecosystem, info.sourceFile, info.dependencies.size),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
         )

@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.rsav.githubPublicRepoBrowser.data.remote.IContributorDataSource
-import com.rsav.githubPublicRepoBrowser.data.remote.cached.AvailableTopicsProvider
+import com.rsav.githubPublicRepoBrowser.data.remote.cached.IAvailableTopicsProvider
 import com.rsav.githubPublicRepoBrowser.domain.model.PROGRAMMING_LANGUAGES
 import com.rsav.githubPublicRepoBrowser.domain.model.ProgrammingLanguage
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
@@ -49,7 +49,7 @@ class RepoSearchViewModel @Inject constructor(
     private val searchReposUseCase: ISearchReposUseCase,
     private val savedSearchRepository: ISavedSearchRepository,
     private val contributorDataSource: IContributorDataSource,
-    private val availableTopicsProvider: AvailableTopicsProvider,
+    private val availableTopicsProvider: IAvailableTopicsProvider,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())

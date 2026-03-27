@@ -62,4 +62,41 @@
     <string name="dependencies_count">%1$d dépendances</string>
     <string name="dependencies_none">Aucun fichier de dépendance trouvé</string>
     <string name="dependencies_loading">Chargement des dépendances\u2026</string>
+
+    <!-- Badges -->
+    <string name="badge_popular">Populaire</string>
+    <string name="badge_active">Actif</string>
+    <string name="badge_inactive_years">Inactif %1$da</string>
+    <string name="badge_stale">Obsolète</string>
+    <string name="badge_no_license">Pas de licence</string>
+    <string name="badge_open_issues">%1$s issues ouverts</string>
+    <string name="badge_issues_resolved">Issues : %1$d%% résolus</string>
+    <string name="badge_forks">%1$s forks</string>
+    <string name="badge_bus_factor">%1$d contrib \u26A0\uFE0F facteur bus</string>
+    <plurals name="contributors_count">
+        <item quantity="one">%1$s contributeur</item>
+        <item quantity="other">%1$s contributeurs</item>
+    </plurals>
+
+    <!-- Detail screen -->
+    <string name="star_on_github_desc">Mettre une étoile sur GitHub</string>
+    <string name="single_maintainer_risk">Risque de mainteneur unique</string>
+    <string name="strong_community">Communauté forte</string>
+    <plurals name="dependency_ecosystem">
+        <item quantity="one">%1$s (%2$s) \u2014 %3$d dépendance</item>
+        <item quantity="other">%1$s (%2$s) \u2014 %3$d dépendances</item>
+    </plurals>
+
+    <!-- Favorites screen -->
+    <string name="favorites_and_account">Favoris et compte</string>
+    <string name="saved_repos_count">Dépôts enregistrés (%1$d)</string>
+    <string name="no_saved_repos">Aucun dépôt enregistré pour l\'instant</string>
+    <string name="no_saved_repos_hint">Appuyez sur l\'icône de signet sur n\'importe quel dépôt pour l\'enregistrer hors ligne</string>
+    <string name="github_account">Compte GitHub</string>
+    <string name="logged_in_fallback">Connecté</string>
+    <string name="star_repos_hint">Vous pouvez mettre des étoiles aux dépôts sur GitHub</string>
+    <string name="logout">Déconnexion</string>
+    <string name="sign_in_hint">Connectez-vous pour mettre des étoiles aux dépôts directement sur GitHub</string>
+    <string name="sign_in_github">Se connecter avec GitHub</string>
+    <string name="favorites_desc">Favoris</string>
 </resources>

@@ -7,8 +7,8 @@ import com.rsav.githubPublicRepoBrowser.BuildConfig
 import com.rsav.githubPublicRepoBrowser.data.auth.GitHubAuthManager
 import com.rsav.githubPublicRepoBrowser.data.paging.RepoSearchFunction
 import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
-import com.rsav.githubPublicRepoBrowser.data.remote.cached.AvailableTopicsProvider
 import com.rsav.githubPublicRepoBrowser.data.remote.cached.CachedRepoDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.cached.IAvailableTopicsProvider
 import com.rsav.githubPublicRepoBrowser.util.L
 import dagger.Module
 import dagger.Provides
@@ -87,8 +87,8 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAvailableTopicsProvider(cachedDataSource: CachedRepoDataSource): AvailableTopicsProvider =
-        AvailableTopicsProvider { cachedDataSource.getIndex().availableTopics }
+    fun provideAvailableTopicsProvider(cachedDataSource: CachedRepoDataSource): IAvailableTopicsProvider =
+        IAvailableTopicsProvider { cachedDataSource.getIndex().availableTopics }
 
     @Provides
     @Singleton

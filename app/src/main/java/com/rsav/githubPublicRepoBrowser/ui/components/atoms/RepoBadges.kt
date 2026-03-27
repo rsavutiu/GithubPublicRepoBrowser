@@ -1,5 +1,6 @@
 package com.rsav.githubPublicRepoBrowser.ui.components.atoms
 
+import android.content.res.Resources
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -24,7 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.rsav.githubPublicRepoBrowser.R
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -43,8 +46,9 @@ fun RepoBadges(
     modifier: Modifier = Modifier,
     contributorCount: Int? = null,
 ) {
+    val resources = LocalContext.current.resources
     val badges = remember(repo.id, repo.stargazerCount, repo.forkCount, repo.updatedAt, repo.openIssuesCount, repo.closedIssuesCount, contributorCount) {
-        buildBadges(repo, contributorCount)
+        buildBadges(repo, contributorCount, resources)
     }
 
     if (badges.isEmpty()) return
@@ -81,7 +85,7 @@ private fun BadgeItem(badge: RepoBadge) {
     }
 }
 
-private fun buildBadges(repo: Repo, contributorCount: Int? = null): List<RepoBadge> {
+private fun buildBadges(repo: Repo, contributorCount: Int? = null, res: Resources): List<RepoBadge> {
     val badges = mutableListOf<RepoBadge>()
 
     // Popularity badge
@@ -90,7 +94,7 @@ private fun buildBadges(repo: Repo, contributorCount: Int? = null): List<RepoBad
             RepoBadge("\u2B50 ${formatBadgeCount(repo.stargazerCount)}", Icons.Default.Star, Color(0xFFDAA520))
         )
         repo.stargazerCount >= 1_000 -> badges.add(
-            RepoBadge("Popular", Icons.Default.TrendingUp, Color(0xFF4CAF50))
+            RepoBadge(res.getString(R.string.badge_popular), Icons.Default.TrendingUp, Color(0xFF4CAF50))
         )
     }
 
@@ -104,13 +108,13 @@ private fun buildBadges(repo: Repo, contributorCount: Int? = null): List<RepoBad
 
             when {
                 daysSinceUpdate <= 7 -> badges.add(
-                    RepoBadge("Active", Icons.Default.LocalFireDepartment, Color(0xFFFF5722))
+                    RepoBadge(res.getString(R.string.badge_active), Icons.Default.LocalFireDepartment, Color(0xFFFF5722))
                 )
                 daysSinceUpdate > 365 -> badges.add(
-                    RepoBadge("Inactive ${daysSinceUpdate / 365}y", Icons.Default.Warning, Color(0xFF9E9E9E))
+                    RepoBadge(res.getString(R.string.badge_inactive_years, (daysSinceUpdate / 365).toInt()), Icons.Default.Warning, Color(0xFF9E9E9E))
                 )
                 daysSinceUpdate > 180 -> badges.add(
-                    RepoBadge("Stale", Icons.Default.Warning, Color(0xFFFF9800))
+                    RepoBadge(res.getString(R.string.badge_stale), Icons.Default.Warning, Color(0xFFFF9800))
                 )
             }
         } catch (_: Exception) { /* skip badge */ }
@@ -120,7 +124,7 @@ private fun buildBadges(repo: Repo, contributorCount: Int? = null): List<RepoBad
     val license = repo.licenseName
     when {
         license.isNullOrBlank() || license == "NOASSERTION" -> badges.add(
-            RepoBadge("No license", Icons.Default.Warning, Color(0xFFFF9800))
+            RepoBadge(res.getString(R.string.badge_no_license), Icons.Default.Warning, Color(0xFFFF9800))
         )
         else -> badges.add(
             RepoBadge(license, Icons.Default.Gavel, Color(0xFF78909C))
@@ -133,10 +137,10 @@ private fun buildBadges(repo: Repo, contributorCount: Int? = null): List<RepoBad
         val closeRatio = repo.closedIssuesCount.toFloat() / totalIssues
         when {
             repo.openIssuesCount > 50 && closeRatio < 0.5f -> badges.add(
-                RepoBadge("${formatBadgeCount(repo.openIssuesCount)} open issues", Icons.Default.BugReport, Color(0xFFFF5722))
+                RepoBadge(res.getString(R.string.badge_open_issues, formatBadgeCount(repo.openIssuesCount)), Icons.Default.BugReport, Color(0xFFFF5722))
             )
             closeRatio >= 0.8f -> badges.add(
-                RepoBadge("Issues: ${(closeRatio * 100).toInt()}% resolved", Icons.Default.BugReport, Color(0xFF4CAF50))
+                RepoBadge(res.getString(R.string.badge_issues_resolved, (closeRatio * 100).toInt()), Icons.Default.BugReport, Color(0xFF4CAF50))
             )
         }
     }
@@ -146,7 +150,7 @@ private fun buildBadges(repo: Repo, contributorCount: Int? = null): List<RepoBad
         val forkRatio = repo.forkCount.toFloat() / repo.stargazerCount
         if (forkRatio > 0.3f) {
             badges.add(
-                RepoBadge("${formatBadgeCount(repo.forkCount)} forks", Icons.Default.TrendingUp, Color(0xFF2196F3))
+                RepoBadge(res.getString(R.string.badge_forks, formatBadgeCount(repo.forkCount)), Icons.Default.TrendingUp, Color(0xFF2196F3))
             )
         }
     }
@@ -155,13 +159,13 @@ private fun buildBadges(repo: Repo, contributorCount: Int? = null): List<RepoBad
     if (contributorCount != null) {
         when {
             contributorCount <= 2 && repo.stargazerCount >= 1000 -> badges.add(
-                RepoBadge("$contributorCount contrib \u26A0\uFE0F bus factor", Icons.Default.Warning, Color(0xFFFF9800))
+                RepoBadge(res.getString(R.string.badge_bus_factor, contributorCount), Icons.Default.Warning, Color(0xFFFF9800))
             )
             contributorCount >= 100 -> badges.add(
-                RepoBadge("${formatBadgeCount(contributorCount)} contributors", Icons.Default.TrendingUp, Color(0xFF4CAF50))
+                RepoBadge(res.getQuantityString(R.plurals.contributors_count, contributorCount, formatBadgeCount(contributorCount)), Icons.Default.TrendingUp, Color(0xFF4CAF50))
             )
             contributorCount > 0 -> badges.add(
-                RepoBadge("$contributorCount contributors", Icons.Default.TrendingUp, Color(0xFF78909C))
+                RepoBadge(res.getQuantityString(R.plurals.contributors_count, contributorCount, contributorCount.toString()), Icons.Default.TrendingUp, Color(0xFF78909C))
             )
         }
     }

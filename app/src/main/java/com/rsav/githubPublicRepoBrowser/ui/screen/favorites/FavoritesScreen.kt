@@ -37,11 +37,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.rsav.githubPublicRepoBrowser.R
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.GithubAvatar
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.RepoBadges
@@ -61,12 +63,12 @@ fun FavoritesScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Favorites & Account") },
+                title = { Text(stringResource(R.string.favorites_and_account)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.back),
                         )
                     }
                 },
@@ -97,7 +99,7 @@ fun FavoritesScreen(
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Saved Repositories (${uiState.favorites.size})",
+                    text = stringResource(R.string.saved_repos_count, uiState.favorites.size),
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
@@ -120,12 +122,12 @@ fun FavoritesScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "No saved repositories yet",
+                                text = stringResource(R.string.no_saved_repos),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = "Tap the bookmark icon on any repository to save it for offline access",
+                                text = stringResource(R.string.no_saved_repos_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -157,7 +159,7 @@ private fun AccountSection(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "GitHub Account",
+                text = stringResource(R.string.github_account),
                 style = MaterialTheme.typography.titleSmall,
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -175,11 +177,11 @@ private fun AccountSection(
                     }
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = username ?: "Logged in",
+                            text = username ?: stringResource(R.string.logged_in_fallback),
                             style = MaterialTheme.typography.bodyLarge,
                         )
                         Text(
-                            text = "You can star repositories on GitHub",
+                            text = stringResource(R.string.star_repos_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -191,12 +193,12 @@ private fun AccountSection(
                             modifier = Modifier.size(18.dp),
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Logout")
+                        Text(stringResource(R.string.logout))
                     }
                 }
             } else {
                 Text(
-                    text = "Sign in to star repositories directly on GitHub",
+                    text = stringResource(R.string.sign_in_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -208,7 +210,7 @@ private fun AccountSection(
                         modifier = Modifier.size(18.dp),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Sign in with GitHub")
+                    Text(stringResource(R.string.sign_in_github))
                 }
             }
         }

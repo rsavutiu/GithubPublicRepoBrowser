@@ -61,6 +61,6 @@ class CachedRepoDataSource @Inject constructor(
 class CacheUnavailableException(message: String) : Exception(message)
 
 /** Provides the list of available topics from the cache index. */
-fun interface AvailableTopicsProvider {
+fun interface IAvailableTopicsProvider {
     suspend fun getAvailableTopics(): List<String>
 }
