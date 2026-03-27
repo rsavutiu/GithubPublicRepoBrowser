@@ -12,13 +12,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.ui.screen.detail.RepoDetailScreen
 import com.rsav.githubPublicRepoBrowser.ui.screen.favorites.FavoritesScreen
 import com.rsav.githubPublicRepoBrowser.ui.screen.search.RepoSearchScreen
 import com.rsav.githubPublicRepoBrowser.ui.screen.userrepos.UserReposScreen
 import com.rsav.githubPublicRepoBrowser.util.L
-import kotlinx.serialization.json.Json
 
 //Maybe a bit too slow/long
 private const val FADE_DURATION_MS = 1000
@@ -47,7 +45,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 val selectedTopic = savedStateHandle.get<String>("selected_topic")
                 LaunchedEffect(selectedTopic) {
                     selectedTopic?.let {
-                        viewModel.onIntent(com.rsav.githubPublicRepoBrowser.ui.screen.search.SearchIntent.TopicSelected(it))
+                        viewModel.onIntent(com.rsav.githubPublicRepoBrowser.ui.screen.search.SearchIntent.TopicToggled(it))
                         savedStateHandle.remove<String>("selected_topic")
                     }
                 }
@@ -55,7 +53,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 RepoSearchScreen(
                     onNavigateToDetail = { repo ->
                         L.d(TAG, "navigating to detail: ${repo.nameWithOwner}")
-                        val json = Json.encodeToString<Repo>(repo)
+                        val json = repo.toNavJson()
                         navController.navigate(DetailRoute(repoJson = json))
                     },
                     onNavigateToFavorites = {
@@ -74,7 +72,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 popExitTransition = { fadeOut(tween(FADE_DURATION_MS)) },
             ) { backStackEntry ->
                 val route = backStackEntry.toRoute<DetailRoute>()
-                val repo = Json.decodeFromString<Repo>(route.repoJson)
+                val repo = repoFromNavJson(route.repoJson)
                 L.d(TAG, "composable → DetailRoute for ${repo.nameWithOwner} \n readme: ${repo.readmeText}")
 
                 RepoDetailScreen(
@@ -111,7 +109,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                     },
                     onRepoClick = { repo ->
                         L.d(TAG, "navigating to detail from favorites: ${repo.nameWithOwner}")
-                        val json = Json.encodeToString<Repo>(repo)
+                        val json = repo.toNavJson()
                         navController.navigate(DetailRoute(repoJson = json))
                     },
                     modifier = modifier,
@@ -125,7 +123,7 @@ fun AppNavGraph(modifier: Modifier = Modifier) {
                 UserReposScreen(
                     onNavigateToDetail = { repo ->
                         L.d(TAG, "navigating to detail from user repos: ${repo.nameWithOwner}")
-                        val json = Json.encodeToString<Repo>(repo)
+                        val json = repo.toNavJson()
                         navController.navigate(DetailRoute(repoJson = json))
                     },
                     onNavigateBack = {

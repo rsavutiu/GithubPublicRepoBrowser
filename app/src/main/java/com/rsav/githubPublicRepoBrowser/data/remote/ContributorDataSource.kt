@@ -1,7 +1,8 @@
 package com.rsav.githubPublicRepoBrowser.data.remote
 
+import com.rsav.githubPublicRepoBrowser.di.IoDispatcher
 import com.rsav.githubPublicRepoBrowser.util.L
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -9,10 +10,16 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/** Abstraction so the ViewModel can be tested with a fake. */
+interface IContributorDataSource {
+    suspend fun getContributorCount(owner: String, repo: String): Int?
+}
+
 @Singleton
 class ContributorDataSource @Inject constructor(
     private val okHttpClient: OkHttpClient,
-) {
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+) : IContributorDataSource {
     private val cache = ConcurrentHashMap<String, Int>()
 
     /**
@@ -20,11 +27,11 @@ class ContributorDataSource @Inject constructor(
      * Uses `per_page=1&anon=true` and reads the `Link` header's last page number
      * to get the total count without fetching all contributors.
      */
-    suspend fun getContributorCount(owner: String, repo: String): Int? {
+    override suspend fun getContributorCount(owner: String, repo: String): Int? {
         val key = "$owner/$repo"
         cache[key]?.let { return it }
 
-        return withContext(Dispatchers.IO) {
+        return withContext(ioDispatcher) {
             try {
                 val request = Request.Builder()
                     .url("https://api.github.com/repos/$key/contributors?per_page=1&anon=true")

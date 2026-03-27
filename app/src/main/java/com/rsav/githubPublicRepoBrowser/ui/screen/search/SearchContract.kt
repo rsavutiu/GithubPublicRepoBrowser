@@ -24,7 +24,11 @@ sealed interface SearchIntent {
     data class RequestDeleteSavedSearch(val savedSearch: SavedSearch) : SearchIntent
     data object ConfirmDeleteSavedSearch : SearchIntent
     data object DismissDeleteSavedSearch : SearchIntent
-    data class TopicSelected(val topic: String?) : SearchIntent
+    data class TopicToggled(val topic: String) : SearchIntent
+    data object ClearTopics : SearchIntent
+    data object ShowTopicPicker : SearchIntent
+    data object DismissTopicPicker : SearchIntent
+    data class LoadContributorCount(val owner: String, val repoName: String) : SearchIntent
 }
 
 @Immutable
@@ -38,7 +42,11 @@ data class SearchUiState(
     val savedSearches: List<SavedSearch> = emptyList(),
     val showSaveSearchDialog: Boolean = false,
     val savedSearchPendingDelete: SavedSearch? = null,
-    val selectedTopic: String? = null,
+    val selectedTopics: Set<String> = emptySet(),
+    val showTopicPicker: Boolean = false,
+    val availableTopics: List<String> = emptyList(),
+    val loadingTopics: Boolean = false,
+    val contributorCounts: Map<String, Int> = emptyMap(),
 )
 
 sealed interface SearchSideEffect {

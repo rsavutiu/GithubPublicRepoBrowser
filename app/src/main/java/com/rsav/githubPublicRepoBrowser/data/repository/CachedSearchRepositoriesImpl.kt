@@ -5,6 +5,7 @@ import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.rsav.githubPublicRepoBrowser.data.paging.CachedRepoPagingSource
 import com.rsav.githubPublicRepoBrowser.data.remote.cached.CachedRepoDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.cached.toDomainModel
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
 import com.rsav.githubPublicRepoBrowser.util.L
@@ -35,18 +36,25 @@ class CachedSearchRepositoriesImpl @Inject constructor(
     }
 
     private suspend fun fetchFromCache(query: String): List<Repo> {
-        // Check if this is a topic query
-        val topicMatch = TOPIC_REGEX.find(query)
-        if (topicMatch != null) {
-            val topic = topicMatch.groupValues[1]
-            L.d(TAG, "Fetching cached topic: $topic")
-            return dataSource.getTopicRepos(topic).repos
+        // Check if this is a topic query (may have multiple topic: qualifiers)
+        val topicMatches = TOPIC_REGEX.findAll(query).map { it.groupValues[1] }.toList()
+        if (topicMatches.isNotEmpty()) {
+            val primaryTopic = topicMatches.first()
+            L.d(TAG, "Fetching cached topic: $primaryTopic (all topics: $topicMatches)")
+            val repos = dataSource.getTopicRepos(primaryTopic).repos.map { it.toDomainModel() }
+            // If multiple topics selected, filter to repos containing all of them
+            return if (topicMatches.size > 1) {
+                val requiredTopics = topicMatches.toSet()
+                repos.filter { repo -> repo.topics.containsAll(requiredTopics) }
+            } else {
+                repos
+            }
         }
 
         // Otherwise, determine the period from the created:> date in the query
         val period = detectPeriod(query)
         L.d(TAG, "Fetching cached trending: $period")
-        return dataSource.getTrending(period).repos
+        return dataSource.getTrending(period).repos.map { it.toDomainModel() }
     }
 
     companion object {

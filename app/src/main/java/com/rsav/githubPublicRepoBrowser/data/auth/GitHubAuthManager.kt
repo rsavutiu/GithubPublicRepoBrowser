@@ -23,37 +23,47 @@ import javax.inject.Singleton
 
 private val Context.authDataStore by preferencesDataStore(name = "github_auth")
 
+interface IGitHubAuthManager {
+    val isLoggedIn: Flow<Boolean>
+    val username: Flow<String?>
+    val avatarUrl: Flow<String?>
+    suspend fun getAccessToken(): String?
+    fun getOAuthUrl(): String
+    suspend fun exchangeCodeForToken(code: String): Boolean
+    suspend fun logout()
+}
+
 @Singleton
 class GitHubAuthManager @Inject constructor(
     @ApplicationContext private val context: Context,
-) {
+) : IGitHubAuthManager {
     private val accessTokenKey = stringPreferencesKey("access_token")
     private val usernameKey = stringPreferencesKey("username")
     private val avatarKey = stringPreferencesKey("avatar_url")
 
-    val isLoggedIn: Flow<Boolean> = context.authDataStore.data.map { prefs ->
+    override val isLoggedIn: Flow<Boolean> = context.authDataStore.data.map { prefs ->
         prefs[accessTokenKey] != null
     }
 
-    val username: Flow<String?> = context.authDataStore.data.map { prefs ->
+    override val username: Flow<String?> = context.authDataStore.data.map { prefs ->
         prefs[usernameKey]
     }
 
-    val avatarUrl: Flow<String?> = context.authDataStore.data.map { prefs ->
+    override val avatarUrl: Flow<String?> = context.authDataStore.data.map { prefs ->
         prefs[avatarKey]
     }
 
-    suspend fun getAccessToken(): String? =
+    override suspend fun getAccessToken(): String? =
         context.authDataStore.data.first()[accessTokenKey]
 
-    fun getOAuthUrl(): String {
+    override fun getOAuthUrl(): String {
         val clientId = BuildConfig.GITHUB_CLIENT_ID
         val scopes = "public_repo" // needed for starring
         val redirectUri = "ghrepobrowser://oauth/callback"
         return "https://github.com/login/oauth/authorize?client_id=$clientId&scope=$scopes&redirect_uri=$redirectUri"
     }
 
-    suspend fun exchangeCodeForToken(code: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun exchangeCodeForToken(code: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val client = OkHttpClient()
             val body = FormBody.Builder()
@@ -102,7 +112,7 @@ class GitHubAuthManager @Inject constructor(
         }
     }
 
-    suspend fun logout() {
+    override suspend fun logout() {
         context.authDataStore.edit { it.clear() }
         L.i(TAG, "Logged out")
     }

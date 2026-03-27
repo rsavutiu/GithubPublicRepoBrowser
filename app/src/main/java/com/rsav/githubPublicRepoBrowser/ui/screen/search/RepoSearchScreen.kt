@@ -53,11 +53,13 @@ import com.rsav.githubPublicRepoBrowser.domain.model.PROGRAMMING_LANGUAGES
 import com.rsav.githubPublicRepoBrowser.domain.model.ProgrammingLanguage
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.model.SPOKEN_LANGUAGES
+import com.rsav.githubPublicRepoBrowser.domain.model.SavedSearch
 import com.rsav.githubPublicRepoBrowser.domain.model.TrendingPeriod
 import com.rsav.githubPublicRepoBrowser.ui.components.molecules.SearchBar
 import com.rsav.githubPublicRepoBrowser.ui.components.organisms.LanguagePickerSheet
 import com.rsav.githubPublicRepoBrowser.ui.components.organisms.RepoList
 import com.rsav.githubPublicRepoBrowser.ui.components.organisms.SaveSearchDialog
+import com.rsav.githubPublicRepoBrowser.ui.components.organisms.TopicPickerSheet
 import com.rsav.githubPublicRepoBrowser.ui.preview.sampleRepos
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 import kotlinx.coroutines.flow.flowOf
@@ -65,7 +67,7 @@ import kotlinx.coroutines.flow.flowOf
 // ──────────────────────────────────────────────────────────────
 // Stateful wrapper — owns ViewModel, collects side-effects.
 // Not previewed.
-// ──────────────────────────────────────────────────────────────
+// ─────────────���────────────────────────────────────────────────
 
 @Composable
 fun RepoSearchScreen(
@@ -92,32 +94,75 @@ fun RepoSearchScreen(
         uiState = uiState,
         repos = repos,
         onIntent = viewModel::onIntent,
-        onLoadContributorCount = viewModel::getContributorCount,
         onNavigateToFavorites = onNavigateToFavorites,
         animatedVisibilityScope = animatedVisibilityScope,
         sharedTransitionScope = sharedTransitionScope,
     )
 }
 
-// ──────────────────────────────────────────────────────────────
+// ─────────────────────────────��────────────────────────────────
 // Stateless content — pure function of state + callbacks.
 // Fully previewable.
-// ──────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────��─────────────────
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RepoSearchContent(
     uiState: SearchUiState,
     repos: LazyPagingItems<Repo>,
     onIntent: (SearchIntent) -> Unit,
     modifier: Modifier = Modifier,
-    onLoadContributorCount: (suspend (owner: String, repo: String) -> Int?)? = null,
     onNavigateToFavorites: () -> Unit = {},
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
 ) {
-    // Progressive back: clear filters/state before exiting
-    val hasActiveFilters = uiState.selectedTopic != null ||
+    ProgressiveBackHandler(uiState = uiState, onIntent = onIntent)
+    SearchDialogs(uiState = uiState, onIntent = onIntent)
+
+    Scaffold(modifier = modifier) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(paddingValues = innerPadding)
+                .fillMaxSize(),
+        ) {
+            SearchToolbar(
+                uiState = uiState,
+                onIntent = onIntent,
+                onNavigateToFavorites = onNavigateToFavorites,
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SavedSearchChips(
+                savedSearches = uiState.savedSearches,
+                onIntent = onIntent,
+            )
+
+            FilterChipsRow(uiState = uiState, onIntent = onIntent)
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            RepoResultsBody(
+                repos = repos,
+                uiState = uiState,
+                onIntent = onIntent,
+                animatedVisibilityScope = animatedVisibilityScope,
+                sharedTransitionScope = sharedTransitionScope,
+            )
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Extracted composables
+// ────────────────────────────────────────────────────────────���─
+
+@Composable
+private fun ProgressiveBackHandler(
+    uiState: SearchUiState,
+    onIntent: (SearchIntent) -> Unit,
+) {
+    val hasActiveFilters = uiState.selectedTopics.isNotEmpty() ||
         uiState.selectedLanguage != null ||
         uiState.selectedSpokenLanguage != null ||
         uiState.query.isNotEmpty()
@@ -126,12 +171,14 @@ fun RepoSearchContent(
         when {
             uiState.showLanguagePicker || uiState.showSpokenLanguagePicker ->
                 onIntent(SearchIntent.DismissPicker)
+            uiState.showTopicPicker ->
+                onIntent(SearchIntent.DismissTopicPicker)
             uiState.showSaveSearchDialog ->
                 onIntent(SearchIntent.DismissSaveSearchDialog)
             uiState.savedSearchPendingDelete != null ->
                 onIntent(SearchIntent.DismissDeleteSavedSearch)
-            uiState.selectedTopic != null ->
-                onIntent(SearchIntent.TopicSelected(null))
+            uiState.selectedTopics.isNotEmpty() ->
+                onIntent(SearchIntent.ClearTopics)
             uiState.selectedLanguage != null ->
                 onIntent(SearchIntent.ProgrammingLanguageSelected(null))
             uiState.selectedSpokenLanguage != null ->
@@ -142,8 +189,14 @@ fun RepoSearchContent(
             }
         }
     }
+}
 
-    // Language picker bottom sheets
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SearchDialogs(
+    uiState: SearchUiState,
+    onIntent: (SearchIntent) -> Unit,
+) {
     if (uiState.showLanguagePicker) {
         LanguagePickerSheet(
             title = stringResource(R.string.prog_language_title),
@@ -168,7 +221,17 @@ fun RepoSearchContent(
         )
     }
 
-    // Save search dialog
+    if (uiState.showTopicPicker) {
+        TopicPickerSheet(
+            topics = uiState.availableTopics,
+            selectedTopics = uiState.selectedTopics,
+            loading = uiState.loadingTopics,
+            onToggle = { onIntent(SearchIntent.TopicToggled(it)) },
+            onClear = { onIntent(SearchIntent.ClearTopics) },
+            onDismiss = { onIntent(SearchIntent.DismissTopicPicker) },
+        )
+    }
+
     if (uiState.showSaveSearchDialog) {
         SaveSearchDialog(
             onConfirm = { onIntent(SearchIntent.ConfirmSaveSearch(it)) },
@@ -176,245 +239,265 @@ fun RepoSearchContent(
         )
     }
 
-    // Delete confirmation dialog
     uiState.savedSearchPendingDelete?.let { pending ->
-        AlertDialog(
-            onDismissRequest = { onIntent(SearchIntent.DismissDeleteSavedSearch) },
-            title = { Text(stringResource(R.string.delete_saved_search_title)) },
-            text = { Text(stringResource(R.string.delete_saved_search_confirm, pending.name)) },
-            confirmButton = {
-                TextButton(onClick = { onIntent(SearchIntent.ConfirmDeleteSavedSearch) }) {
-                    Text(stringResource(R.string.delete))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { onIntent(SearchIntent.DismissDeleteSavedSearch) }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-        )
+        DeleteSavedSearchDialog(pending = pending, onIntent = onIntent)
     }
+}
 
-    Scaffold(modifier = modifier) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues = innerPadding)
-                .fillMaxSize(),
-        ) {
-            SearchBar(
-                modifier = Modifier.padding(horizontal = 8.dp),
-                query = uiState.query,
-                onQueryChanged = { onIntent(SearchIntent.QueryChanged(it)) },
-                onSearch = { onIntent(SearchIntent.Search) },
-                trailingIcons = {
-                    if (uiState.query.isNotBlank()) {
-                        IconButton(onClick = { onIntent(SearchIntent.ShowSaveSearchDialog) }) {
-                            Icon(
-                                imageVector = Icons.Default.BookmarkAdd,
-                                contentDescription = stringResource(R.string.save_current_search_desc),
-                            )
-                        }
-                    }
-                    IconButton(onClick = { onIntent(SearchIntent.ShowLanguagePicker) }) {
+@Composable
+private fun DeleteSavedSearchDialog(
+    pending: SavedSearch,
+    onIntent: (SearchIntent) -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = { onIntent(SearchIntent.DismissDeleteSavedSearch) },
+        title = { Text(stringResource(R.string.delete_saved_search_title)) },
+        text = { Text(stringResource(R.string.delete_saved_search_confirm, pending.name)) },
+        confirmButton = {
+            TextButton(onClick = { onIntent(SearchIntent.ConfirmDeleteSavedSearch) }) {
+                Text(stringResource(R.string.delete))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = { onIntent(SearchIntent.DismissDeleteSavedSearch) }) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+    )
+}
+
+@Composable
+private fun SearchToolbar(
+    uiState: SearchUiState,
+    onIntent: (SearchIntent) -> Unit,
+    onNavigateToFavorites: () -> Unit,
+) {
+    SearchBar(
+        modifier = Modifier.padding(horizontal = 8.dp),
+        query = uiState.query,
+        onQueryChanged = { onIntent(SearchIntent.QueryChanged(it)) },
+        onSearch = { onIntent(SearchIntent.Search) },
+        trailingIcons = {
+            if (uiState.query.isNotBlank()) {
+                IconButton(onClick = { onIntent(SearchIntent.ShowSaveSearchDialog) }) {
+                    Icon(
+                        imageVector = Icons.Default.BookmarkAdd,
+                        contentDescription = stringResource(R.string.save_current_search_desc),
+                    )
+                }
+            }
+            IconButton(onClick = { onIntent(SearchIntent.ShowLanguagePicker) }) {
+                Icon(
+                    imageVector = Icons.Default.Code,
+                    contentDescription = stringResource(R.string.filter_prog_lang_desc),
+                )
+            }
+            IconButton(onClick = { onIntent(SearchIntent.ShowSpokenLanguagePicker) }) {
+                Icon(
+                    imageVector = Icons.Default.Translate,
+                    contentDescription = stringResource(R.string.filter_spoken_lang_desc),
+                )
+            }
+            IconButton(onClick = { onIntent(SearchIntent.ShowTopicPicker) }) {
+                Icon(
+                    imageVector = Icons.Default.Tag,
+                    contentDescription = stringResource(R.string.filter_topics_desc),
+                )
+            }
+            IconButton(onClick = onNavigateToFavorites) {
+                Icon(
+                    imageVector = Icons.Default.Bookmark,
+                    contentDescription = "Favorites",
+                )
+            }
+        },
+    )
+}
+
+@Composable
+private fun SavedSearchChips(
+    savedSearches: List<SavedSearch>,
+    onIntent: (SearchIntent) -> Unit,
+) {
+    if (savedSearches.isEmpty()) return
+
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(
+            items = savedSearches,
+            key = { it.id },
+        ) { saved ->
+            InputChip(
+                selected = false,
+                onClick = { onIntent(SearchIntent.LoadSavedSearch(saved)) },
+                label = { Text(saved.name) },
+                trailingIcon = {
+                    IconButton(
+                        onClick = { onIntent(SearchIntent.RequestDeleteSavedSearch(saved)) },
+                        modifier = Modifier.size(18.dp),
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.Code,
-                            contentDescription = stringResource(R.string.filter_prog_lang_desc),
-                        )
-                    }
-                    IconButton(onClick = { onIntent(SearchIntent.ShowSpokenLanguagePicker) }) {
-                        Icon(
-                            imageVector = Icons.Default.Translate,
-                            contentDescription = stringResource(R.string.filter_spoken_lang_desc),
-                        )
-                    }
-                    IconButton(onClick = onNavigateToFavorites) {
-                        Icon(
-                            imageVector = Icons.Default.Bookmark,
-                            contentDescription = "Favorites",
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(R.string.delete_saved_search_desc),
+                            modifier = Modifier.size(18.dp),
                         )
                     }
                 },
             )
+        }
+    }
 
-            Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = Modifier.height(4.dp))
+}
 
-            // Saved searches chip row
-            if (uiState.savedSearches.isNotEmpty()) {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(
-                        items = uiState.savedSearches,
-                        key = { it.id },
-                    ) { saved ->
-                        InputChip(
-                            selected = false,
-                            onClick = { onIntent(SearchIntent.LoadSavedSearch(saved)) },
-                            label = { Text(saved.name) },
-                            trailingIcon = {
-                                IconButton(
-                                    onClick = { onIntent(SearchIntent.RequestDeleteSavedSearch(saved)) },
-                                    modifier = Modifier.size(18.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = stringResource(R.string.delete_saved_search_desc),
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                }
-                            },
-                        )
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FilterChipsRow(
+    uiState: SearchUiState,
+    onIntent: (SearchIntent) -> Unit,
+) {
+    FlowRow(
+        modifier = Modifier.padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        TrendingPeriod.entries.forEach { period ->
+            FilterChip(
+                selected = uiState.trendingPeriod == period,
+                onClick = {
+                    if (uiState.trendingPeriod != period) {
+                        onIntent(SearchIntent.TrendingPeriodChanged(period))
+                    } else {
+                        onIntent(SearchIntent.TrendingPeriodChanged(null))
                     }
-                }
+                },
+                label = { Text(stringResource(period.labelRes)) },
+            )
+        }
 
-                Spacer(modifier = Modifier.height(4.dp))
-            }
+        uiState.selectedLanguage?.let { lang ->
+            ActiveFilterChip(
+                label = lang.name,
+                icon = Icons.Default.Code,
+                onDismiss = { onIntent(SearchIntent.ProgrammingLanguageSelected(null)) },
+                dismissContentDescription = stringResource(R.string.remove_lang_filter_desc),
+            )
+        }
 
-            // Trending period chips + active filter chips
-            FlowRow(
-                modifier = Modifier.padding(horizontal = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                TrendingPeriod.entries.forEach { period ->
-                    FilterChip(
-                        selected = uiState.trendingPeriod == period,
-                        onClick = {
-                            if (uiState.trendingPeriod != period) {
-                                onIntent(SearchIntent.TrendingPeriodChanged(period))
-                            } else {
-                                onIntent(SearchIntent.TrendingPeriodChanged(null))
-                            }
-                        },
-                        label = { Text(stringResource(period.labelRes)) },
-                    )
-                }
+        uiState.selectedSpokenLanguage?.let { lang ->
+            ActiveFilterChip(
+                label = lang.name,
+                icon = Icons.Default.Translate,
+                onDismiss = { onIntent(SearchIntent.SpokenLanguageSelected(null)) },
+                dismissContentDescription = stringResource(R.string.remove_spoken_lang_filter_desc),
+            )
+        }
 
-                uiState.selectedLanguage?.let { lang ->
-                    InputChip(
-                        selected = true,
-                        onClick = { onIntent(SearchIntent.ProgrammingLanguageSelected(null)) },
-                        label = { Text(lang.name) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Code,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                        trailingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(R.string.remove_lang_filter_desc),
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                    )
-                }
-
-                uiState.selectedSpokenLanguage?.let { lang ->
-                    InputChip(
-                        selected = true,
-                        onClick = { onIntent(SearchIntent.SpokenLanguageSelected(null)) },
-                        label = { Text(lang.name) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Translate,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                        trailingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(R.string.remove_spoken_lang_filter_desc),
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                    )
-                }
-
-                uiState.selectedTopic?.let { topic ->
-                    InputChip(
-                        selected = true,
-                        onClick = { onIntent(SearchIntent.TopicSelected(null)) },
-                        label = { Text(topic) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Tag,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                        trailingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringResource(R.string.remove_topic_filter_desc),
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            when {
-                repos.loadState.refresh is LoadState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-
-                repos.loadState.refresh is LoadState.Error -> {
-                    val error = (repos.loadState.refresh as LoadState.Error).error
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = error.localizedMessage ?: stringResource(R.string.unknown_error),
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                    }
-                }
-
-                repos.itemCount == 0 && repos.loadState.refresh is LoadState.NotLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.no_repos_found),
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
-                    }
-                }
-
-                else -> {
-                    RepoList(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        repos = repos,
-                        onRepoClick = { onIntent(SearchIntent.RepoClicked(it)) },
-                        onTopicClick = { onIntent(SearchIntent.TopicSelected(it)) },
-                        onLoadContributorCount = onLoadContributorCount,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        sharedTransitionScope = sharedTransitionScope,
-                    )
-                }
-            }
+        uiState.selectedTopics.forEach { topic ->
+            ActiveFilterChip(
+                label = topic,
+                icon = Icons.Default.Tag,
+                onDismiss = { onIntent(SearchIntent.TopicToggled(topic)) },
+                dismissContentDescription = stringResource(R.string.remove_topic_filter_desc),
+            )
         }
     }
 }
 
-// ──────────────────────────────────────────────────────────────
+@Composable
+private fun ActiveFilterChip(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onDismiss: () -> Unit,
+    dismissContentDescription: String,
+) {
+    InputChip(
+        selected = true,
+        onClick = onDismiss,
+        label = { Text(label) },
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+        },
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Default.Close,
+                contentDescription = dismissContentDescription,
+                modifier = Modifier.size(18.dp),
+            )
+        },
+    )
+}
+
+@Composable
+private fun RepoResultsBody(
+    repos: LazyPagingItems<Repo>,
+    uiState: SearchUiState,
+    onIntent: (SearchIntent) -> Unit,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
+    sharedTransitionScope: SharedTransitionScope?,
+) {
+    when {
+        repos.loadState.refresh is LoadState.Loading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+
+        repos.loadState.refresh is LoadState.Error -> {
+            val error = (repos.loadState.refresh as LoadState.Error).error
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = error.localizedMessage ?: stringResource(R.string.unknown_error),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+        }
+
+        repos.itemCount == 0 && repos.loadState.refresh is LoadState.NotLoading -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = stringResource(R.string.no_repos_found),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+        }
+
+        else -> {
+            RepoList(
+                modifier = Modifier.padding(horizontal = 8.dp),
+                repos = repos,
+                onRepoClick = { onIntent(SearchIntent.RepoClicked(it)) },
+                onTopicClick = { onIntent(SearchIntent.TopicToggled(it)) },
+                contributorCounts = uiState.contributorCounts,
+                onRequestContributorCount = { owner, repoName ->
+                    onIntent(SearchIntent.LoadContributorCount(owner, repoName))
+                },
+                animatedVisibilityScope = animatedVisibilityScope,
+                sharedTransitionScope = sharedTransitionScope,
+            )
+        }
+    }
+}
+
+// ���─────────────────────────────────────────────────────────────
 // Previews — no ViewModel, no Hilt, just state + data
-// ──────────────────────────────────────────────────────────────
+// ───────────────────────────��──────────────────────────────────
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

@@ -12,7 +12,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,11 +27,12 @@ import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun RepoList(
-    modifier: Modifier = Modifier,
     repos: LazyPagingItems<Repo>,
+    modifier: Modifier = Modifier,
     onRepoClick: (Repo) -> Unit = {},
     onTopicClick: (String) -> Unit = {},
-    onLoadContributorCount: (suspend (owner: String, repo: String) -> Int?)? = null,
+    contributorCounts: Map<String, Int> = emptyMap(),
+    onRequestContributorCount: (owner: String, repoName: String) -> Unit = { _, _ -> },
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     sharedTransitionScope: SharedTransitionScope? = null,
 ) {
@@ -55,18 +56,17 @@ fun RepoList(
             ) { index ->
                 val repo = repos[index]
                 if (repo != null) {
-                    val contributorCount = if (onLoadContributorCount != null) {
-                        val state = produceState<Int?>(null, repo.ownerLogin, repo.name) {
-                            value = onLoadContributorCount(repo.ownerLogin, repo.name)
-                        }
-                        state.value
-                    } else null
+                    val key = "${repo.ownerLogin}/${repo.name}"
+
+                    LaunchedEffect(key) {
+                        onRequestContributorCount(repo.ownerLogin, repo.name)
+                    }
 
                     RepoCardSimple(
                         repo = repo,
                         onClick = onRepoClick,
                         onTopicClick = onTopicClick,
-                        contributorCount = contributorCount,
+                        contributorCount = contributorCounts[key],
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope,
                     )

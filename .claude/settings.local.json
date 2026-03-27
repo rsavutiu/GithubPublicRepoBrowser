@@ -74,7 +74,11 @@
       "Bash(curl -s https://raw.githubusercontent.com/Drjacky/claude-android-ninja/main/README.md)",
       "Bash(curl -s https://raw.githubusercontent.com/Drjacky/claude-android-ninja/master/README.md)",
       "Bash(mkdir -p ~/.claude/skills)",
-      "Bash(git clone:*)"
+      "Bash(git clone:*)",
+      "Bash(find C:/Users/rsavu/AndroidStudioProjects/GithubPublicRepoBrowser/app/build/test-results -name *.xml -exec grep -l testcase {})",
+      "Bash(2)",
+      "Bash(grep -h 'testsuite' C:/Users/rsavu/AndroidStudioProjects/GithubPublicRepoBrowser/app/build/test-results/testDebugUnitTest/*.xml)",
+      "Bash(grep -l \"ProgrammingLanguage\\\\|SpokenLanguage\" \"C:\\\\Users\\\\rsavu\\\\AndroidStudioProjects\\\\GithubPublicRepoBrowser\\\\app\\\\src\\\\main\\\\java\\\\com\\\\rsav\\\\githubPublicRepoBrowser\\\\domain\\\\model\"*.kt)"
     ]
   }
 }

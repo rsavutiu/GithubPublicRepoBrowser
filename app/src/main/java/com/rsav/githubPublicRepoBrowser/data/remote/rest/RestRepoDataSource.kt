@@ -1,7 +1,8 @@
 package com.rsav.githubPublicRepoBrowser.data.remote.rest
 
+import com.rsav.githubPublicRepoBrowser.di.IoDispatcher
 import com.rsav.githubPublicRepoBrowser.util.L
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -13,6 +14,7 @@ import javax.inject.Singleton
 @Singleton
 class RestRepoDataSource @Inject constructor(
     private val okHttpClient: OkHttpClient,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -20,7 +22,7 @@ class RestRepoDataSource @Inject constructor(
         query: String,
         perPage: Int,
         page: Int,
-    ): RestSearchResponse = withContext(Dispatchers.IO) {
+    ): RestSearchResponse = withContext(ioDispatcher) {
         L.d(TAG, "searchRepositories(query=$query, perPage=$perPage, page=$page)")
 
         // Extract "sort:stars" from the query — REST API needs it as a separate param
@@ -43,7 +45,7 @@ class RestRepoDataSource @Inject constructor(
         json.decodeFromString<RestSearchResponse>(body)
     }
 
-    suspend fun getReadme(owner: String, repo: String): String? = withContext(Dispatchers.IO) {
+    suspend fun getReadme(owner: String, repo: String): String? = withContext(ioDispatcher) {
         L.d(TAG, "getReadme(owner=$owner, repo=$repo)")
 
         // Use the raw content endpoint — returns README as plain text
@@ -63,7 +65,7 @@ class RestRepoDataSource @Inject constructor(
         response.body?.string()
     }
 
-    suspend fun getUserProfile(login: String): RestUserProfile = withContext(Dispatchers.IO) {
+    suspend fun getUserProfile(login: String): RestUserProfile = withContext(ioDispatcher) {
         L.d(TAG, "getUserProfile(login=$login)")
 
         val url = "https://api.github.com/users/$login"

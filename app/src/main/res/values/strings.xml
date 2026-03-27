@@ -43,6 +43,9 @@
     <string name="license_desc">License</string>
     <string name="language_desc">Language</string>
     <string name="topic_desc">Topic</string>
+    <string name="topics_title">Topics</string>
+    <string name="filter_topics_desc">Filter by topic</string>
+    <string name="search_topics_placeholder">Search topics…</string>
     <string name="share_desc">Share repository</string>
     <string name="save_repo_desc">Save repository</string>
     <string name="unsave_repo_desc">Unsave repository</string>

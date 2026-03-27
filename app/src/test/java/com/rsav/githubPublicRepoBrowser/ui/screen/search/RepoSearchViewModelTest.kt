@@ -1,17 +1,17 @@
 package com.rsav.githubPublicRepoBrowser.ui.screen.search
 
-import androidx.paging.PagingData
 import app.cash.turbine.test
+import com.rsav.githubPublicRepoBrowser.data.remote.IContributorDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.ProgrammingLanguage
-import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.model.SpokenLanguage
 import com.rsav.githubPublicRepoBrowser.domain.model.TrendingPeriod
 import com.rsav.githubPublicRepoBrowser.domain.usecase.SearchReposUseCase
-import io.mockk.every
-import io.mockk.mockk
+import com.rsav.githubPublicRepoBrowser.testing.FakeContributorDataSource
+import com.rsav.githubPublicRepoBrowser.testing.FakeSavedSearchRepository
+import com.rsav.githubPublicRepoBrowser.testing.FakeSearchRepositories
+import com.rsav.githubPublicRepoBrowser.testing.createTestRepo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -28,15 +28,28 @@ import org.junit.Test
 class RepoSearchViewModelTest {
 
     private val testDispatcher = UnconfinedTestDispatcher()
-    private lateinit var searchReposUseCase: SearchReposUseCase
+    private lateinit var fakeRepository: FakeSearchRepositories
+    private lateinit var fakeSavedSearchRepo: FakeSavedSearchRepository
+    private lateinit var fakeContributors: FakeContributorDataSource
     private lateinit var viewModel: RepoSearchViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        searchReposUseCase = mockk()
-        every { searchReposUseCase(any(), any(), any(), any()) } returns flowOf(PagingData.from(emptyList()))
-        viewModel = RepoSearchViewModel(searchReposUseCase)
+        fakeRepository = FakeSearchRepositories()
+        fakeSavedSearchRepo = FakeSavedSearchRepository()
+        fakeContributors = FakeContributorDataSource()
+
+        val useCase = SearchReposUseCase(fakeRepository)
+        viewModel = RepoSearchViewModel(
+            searchReposUseCase = useCase,
+            savedSearchRepository = fakeSavedSearchRepo,
+            contributorDataSource = object : IContributorDataSource {
+                override suspend fun getContributorCount(owner: String, repo: String): Int? =
+                    fakeContributors.getContributorCount(owner, repo)
+            },
+            availableTopicsProvider = { listOf("android", "kotlin", "compose") },
+        )
     }
 
     @After
@@ -115,18 +128,4 @@ class RepoSearchViewModelTest {
             )
         }
     }
-
-    private fun createTestRepo(id: String) = Repo(
-        id = id,
-        name = "test-repo-$id",
-        nameWithOwner = "owner/test-repo-$id",
-        description = "A test repository",
-        url = "https://github.com/owner/test-repo-$id",
-        stargazerCount = 100,
-        forkCount = 20,
-        languageName = "Kotlin",
-        languageColor = "#A97BFF",
-        ownerLogin = "owner",
-        ownerAvatarUrl = "https://github.com/owner.png",
-    )
 }

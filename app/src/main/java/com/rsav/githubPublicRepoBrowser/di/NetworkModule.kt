@@ -5,6 +5,10 @@ import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.network.okHttpClient
 import com.rsav.githubPublicRepoBrowser.BuildConfig
 import com.rsav.githubPublicRepoBrowser.data.auth.GitHubAuthManager
+import com.rsav.githubPublicRepoBrowser.data.paging.RepoSearchFunction
+import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.cached.AvailableTopicsProvider
+import com.rsav.githubPublicRepoBrowser.data.remote.cached.CachedRepoDataSource
 import com.rsav.githubPublicRepoBrowser.util.L
 import dagger.Module
 import dagger.Provides
@@ -75,6 +79,16 @@ object NetworkModule {
             .socketFactory(TaggedSocketFactory())
             .build()
     }
+
+    @Provides
+    @Singleton
+    fun provideRepoSearchFunction(dataSource: ApolloRepoDataSource): RepoSearchFunction =
+        RepoSearchFunction(dataSource::searchRepositories)
+
+    @Provides
+    @Singleton
+    fun provideAvailableTopicsProvider(cachedDataSource: CachedRepoDataSource): AvailableTopicsProvider =
+        AvailableTopicsProvider { cachedDataSource.getIndex().availableTopics }
 
     @Provides
     @Singleton

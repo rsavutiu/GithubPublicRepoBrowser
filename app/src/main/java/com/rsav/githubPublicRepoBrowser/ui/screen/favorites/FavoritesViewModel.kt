@@ -2,7 +2,7 @@ package com.rsav.githubPublicRepoBrowser.ui.screen.favorites
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.rsav.githubPublicRepoBrowser.data.auth.GitHubAuthManager
+import com.rsav.githubPublicRepoBrowser.data.auth.IGitHubAuthManager
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.repository.IFavoriteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,7 +23,7 @@ data class FavoritesUiState(
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
     private val favoriteRepository: IFavoriteRepository,
-    private val authManager: GitHubAuthManager,
+    private val authManager: IGitHubAuthManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FavoritesUiState())

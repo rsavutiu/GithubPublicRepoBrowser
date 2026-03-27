@@ -11,7 +11,7 @@ import javax.inject.Inject
 
 class ApolloRepoDataSource @Inject constructor(
     private val apolloClient: ApolloClient,
-) {
+) : IDependencyDataSource {
     suspend fun getRepositoryReadme(
         owner: String,
         name: String,
@@ -78,7 +78,7 @@ class ApolloRepoDataSource @Inject constructor(
         return data
     }
 
-    suspend fun getRepositoryDependencies(
+    override suspend fun getRepositoryDependencies(
         owner: String,
         name: String,
     ): RepositoryDependenciesQuery.Data {
@@ -107,3 +107,7 @@ class ApolloRepoDataSource @Inject constructor(
 }
 
 class ApolloQueryException(message: String) : Exception(message)
+
+interface IDependencyDataSource {
+    suspend fun getRepositoryDependencies(owner: String, name: String): RepositoryDependenciesQuery.Data
+}

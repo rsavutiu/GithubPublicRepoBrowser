@@ -2,15 +2,27 @@ package com.rsav.githubPublicRepoBrowser.data.paging
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
+import com.rsav.githubPublicRepoBrowser.SearchRepositoriesQuery
 import com.rsav.githubPublicRepoBrowser.data.mapper.toDomainModel
-import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.util.L
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/**
+ * Functional interface for fetching search results.
+ * Decouples the PagingSource from the concrete [ApolloRepoDataSource].
+ */
+fun interface RepoSearchFunction {
+    suspend fun searchRepositories(
+        query: String,
+        first: Int,
+        after: String?,
+    ): SearchRepositoriesQuery.Data
+}
+
 class RepoPagingSource(
-    private val dataSource: ApolloRepoDataSource,
+    private val searchFn: RepoSearchFunction,
     private val query: String,
 ) : PagingSource<String, Repo>() {
     override suspend fun load(params: LoadParams<String>): LoadResult<String, Repo> {
@@ -18,7 +30,7 @@ class RepoPagingSource(
         L.d(TAG, "load(query=$query, loadSize=${params.loadSize}, cursor=$cursor)")
         return try {
             withContext(Dispatchers.IO) {
-                val data = dataSource.searchRepositories(
+                val data = searchFn.searchRepositories(
                     query = query,
                     first = params.loadSize,
                     after = cursor,

@@ -4,7 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
-import com.rsav.githubPublicRepoBrowser.data.remote.ContributorDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.IContributorDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.cached.AvailableTopicsProvider
 import com.rsav.githubPublicRepoBrowser.domain.model.PROGRAMMING_LANGUAGES
 import com.rsav.githubPublicRepoBrowser.domain.model.ProgrammingLanguage
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
@@ -13,7 +14,7 @@ import com.rsav.githubPublicRepoBrowser.domain.model.SavedSearch
 import com.rsav.githubPublicRepoBrowser.domain.model.SpokenLanguage
 import com.rsav.githubPublicRepoBrowser.domain.model.TrendingPeriod
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISavedSearchRepository
-import com.rsav.githubPublicRepoBrowser.domain.usecase.SearchReposUseCase
+import com.rsav.githubPublicRepoBrowser.domain.usecase.ISearchReposUseCase
 import com.rsav.githubPublicRepoBrowser.util.L
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -39,15 +40,16 @@ private data class SearchParams(
     val trendingPeriod: TrendingPeriod? = TrendingPeriod.THIS_WEEK,
     val programmingLanguage: ProgrammingLanguage? = null,
     val spokenLanguage: SpokenLanguage? = null,
-    val topic: String? = null,
+    val topics: Set<String> = emptySet(),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class RepoSearchViewModel @Inject constructor(
-    private val searchReposUseCase: SearchReposUseCase,
+    private val searchReposUseCase: ISearchReposUseCase,
     private val savedSearchRepository: ISavedSearchRepository,
-    private val contributorDataSource: ContributorDataSource,
+    private val contributorDataSource: IContributorDataSource,
+    private val availableTopicsProvider: AvailableTopicsProvider,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchUiState())
@@ -68,10 +70,10 @@ class RepoSearchViewModel @Inject constructor(
                 trendingPeriod = params.trendingPeriod,
                 programmingLanguage = params.programmingLanguage,
                 spokenLanguage = params.spokenLanguage,
-                topic = params.topic,
+                topics = params.topics,
             ).cachedIn(viewModelScope)
         }
-        .stateIn(viewModelScope, SharingStarted.Lazily, PagingData.empty())
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PagingData.empty())
 
     init {
         L.i(TAG, "init — emitting default search params")
@@ -105,7 +107,11 @@ class RepoSearchViewModel @Inject constructor(
             is SearchIntent.RequestDeleteSavedSearch -> _uiState.update { it.copy(savedSearchPendingDelete = intent.savedSearch) }
             is SearchIntent.ConfirmDeleteSavedSearch -> confirmDeleteSavedSearch()
             is SearchIntent.DismissDeleteSavedSearch -> _uiState.update { it.copy(savedSearchPendingDelete = null) }
-            is SearchIntent.TopicSelected -> handleTopic(intent.topic)
+            is SearchIntent.TopicToggled -> handleTopicToggled(intent.topic)
+            is SearchIntent.ClearTopics -> handleClearTopics()
+            is SearchIntent.ShowTopicPicker -> showTopicPicker()
+            is SearchIntent.DismissTopicPicker -> _uiState.update { it.copy(showTopicPicker = false) }
+            is SearchIntent.LoadContributorCount -> loadContributorCount(intent.owner, intent.repoName)
         }
     }
 
@@ -138,7 +144,7 @@ class RepoSearchViewModel @Inject constructor(
                 selectedSpokenLanguage = saved.spokenLanguageCode?.let { code ->
                     SPOKEN_LANGUAGES.find { it.code == code }
                 },
-                selectedTopic = null,
+                selectedTopics = emptySet(),
             )
         }
         emitSearch()
@@ -151,9 +157,39 @@ class RepoSearchViewModel @Inject constructor(
         viewModelScope.launch { savedSearchRepository.deleteSavedSearch(pending.id) }
     }
 
-    private fun handleTopic(topic: String?) {
-        _uiState.update { it.copy(selectedTopic = topic) }
+    private fun handleTopicToggled(topic: String) {
+        _uiState.update { state ->
+            val updated = if (topic in state.selectedTopics) {
+                state.selectedTopics - topic
+            } else {
+                state.selectedTopics + topic
+            }
+            state.copy(selectedTopics = updated)
+        }
         emitSearch()
+    }
+
+    private fun handleClearTopics() {
+        _uiState.update { it.copy(selectedTopics = emptySet()) }
+        emitSearch()
+    }
+
+    private fun showTopicPicker() {
+        _uiState.update { it.copy(showTopicPicker = true) }
+        if (_uiState.value.availableTopics.isEmpty()) {
+            _uiState.update { it.copy(loadingTopics = true) }
+            viewModelScope.launch {
+                try {
+                    val topics = availableTopicsProvider.getAvailableTopics()
+                    _uiState.update {
+                        it.copy(availableTopics = topics, loadingTopics = false)
+                    }
+                } catch (e: Exception) {
+                    L.e(TAG, "Failed to fetch available topics", e)
+                    _uiState.update { it.copy(loadingTopics = false) }
+                }
+            }
+        }
     }
 
     private fun handleQueryChanged(query: String) {
@@ -162,14 +198,14 @@ class RepoSearchViewModel @Inject constructor(
 
     private fun emitSearch() {
         val state = _uiState.value
-        L.d(TAG, "emitSearch: query='${state.query}', period=${state.trendingPeriod}, lang=${state.selectedLanguage?.name}, spoken=${state.selectedSpokenLanguage?.name}, topic=${state.selectedTopic}")
+        L.d(TAG, "emitSearch: query='${state.query}', period=${state.trendingPeriod}, lang=${state.selectedLanguage?.name}, spoken=${state.selectedSpokenLanguage?.name}, topics=${state.selectedTopics}")
         _searchTrigger.tryEmit(
             SearchParams(
                 freeText = state.query,
                 trendingPeriod = state.trendingPeriod,
                 programmingLanguage = state.selectedLanguage,
                 spokenLanguage = state.selectedSpokenLanguage,
-                topic = state.selectedTopic,
+                topics = state.selectedTopics,
             )
         )
     }
@@ -196,8 +232,16 @@ class RepoSearchViewModel @Inject constructor(
         }
     }
 
-    suspend fun getContributorCount(owner: String, repo: String): Int? =
-        contributorDataSource.getContributorCount(owner, repo)
+    private fun loadContributorCount(owner: String, repoName: String) {
+        val key = "$owner/$repoName"
+        if (_uiState.value.contributorCounts.containsKey(key)) return
+        viewModelScope.launch {
+            val count = contributorDataSource.getContributorCount(owner, repoName) ?: return@launch
+            _uiState.update { state ->
+                state.copy(contributorCounts = state.contributorCounts + (key to count))
+            }
+        }
+    }
 
     companion object {
         private const val TAG = "SearchVM"

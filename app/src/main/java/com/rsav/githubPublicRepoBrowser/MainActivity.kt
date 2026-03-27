@@ -5,7 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.rsav.githubPublicRepoBrowser.data.auth.GitHubAuthManager
+import com.rsav.githubPublicRepoBrowser.data.auth.IGitHubAuthManager
 import com.rsav.githubPublicRepoBrowser.ui.navigation.AppNavGraph
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 import com.rsav.githubPublicRepoBrowser.util.L
@@ -18,7 +18,7 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
 
     @Inject
-    lateinit var authManager: GitHubAuthManager
+    lateinit var authManager: IGitHubAuthManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

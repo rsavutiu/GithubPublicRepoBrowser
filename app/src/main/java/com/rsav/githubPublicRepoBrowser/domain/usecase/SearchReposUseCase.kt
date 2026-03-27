@@ -10,17 +10,27 @@ import com.rsav.githubPublicRepoBrowser.util.L
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-class SearchReposUseCase @Inject constructor(
-    private val repository: ISearchRepositories
-) {
+interface ISearchReposUseCase {
     operator fun invoke(
         freeText: String = "",
         trendingPeriod: TrendingPeriod? = TrendingPeriod.THIS_WEEK,
         programmingLanguage: ProgrammingLanguage? = null,
         spokenLanguage: SpokenLanguage? = null,
-        topic: String? = null,
+        topics: Set<String> = emptySet(),
+    ): Flow<PagingData<Repo>>
+}
+
+class SearchReposUseCase @Inject constructor(
+    private val repository: ISearchRepositories
+) : ISearchReposUseCase {
+    override operator fun invoke(
+        freeText: String,
+        trendingPeriod: TrendingPeriod?,
+        programmingLanguage: ProgrammingLanguage?,
+        spokenLanguage: SpokenLanguage?,
+        topics: Set<String>,
     ): Flow<PagingData<Repo>> {
-        val query = buildQuery(freeText, trendingPeriod, programmingLanguage, spokenLanguage, topic)
+        val query = buildQuery(freeText, trendingPeriod, programmingLanguage, spokenLanguage, topics)
         L.d(TAG, "invoke → query='$query'")
         return repository.searchRepositories(query)
     }
@@ -33,7 +43,7 @@ class SearchReposUseCase @Inject constructor(
             trendingPeriod: TrendingPeriod?,
             programmingLanguage: ProgrammingLanguage?,
             spokenLanguage: SpokenLanguage?,
-            topic: String? = null,
+            topics: Set<String> = emptySet(),
         ): String {
             val parts = mutableListOf<String>()
 
@@ -42,7 +52,7 @@ class SearchReposUseCase @Inject constructor(
                 parts.add(text)
             }
 
-            topic?.let { parts.add("topic:$it") }
+            topics.forEach { parts.add("topic:$it") }
             programmingLanguage?.let { parts.add("language:${it.queryValue}") }
 
             // Spoken language — GitHub search doesn't have a qualifier for this,

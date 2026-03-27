@@ -4,7 +4,7 @@ import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.rsav.githubPublicRepoBrowser.data.paging.RepoPagingSource
-import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
+import com.rsav.githubPublicRepoBrowser.data.paging.RepoSearchFunction
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.repository.ISearchRepositories
 import com.rsav.githubPublicRepoBrowser.util.L
@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class SearchRepositoriesImpl @Inject constructor(
-    private val dataSource: ApolloRepoDataSource,
+    private val searchFn: RepoSearchFunction,
 ) : ISearchRepositories {
 
     override fun searchRepositories(query: String): Flow<PagingData<Repo>> {
@@ -24,7 +24,7 @@ class SearchRepositoriesImpl @Inject constructor(
                 enablePlaceholders = false,
                 prefetchDistance = PREFETCH_DISTANCE,
             ),
-            pagingSourceFactory = { RepoPagingSource(dataSource, query) },
+            pagingSourceFactory = { RepoPagingSource(searchFn, query) },
         ).flow
     }
 

@@ -1,7 +1,8 @@
 package com.rsav.githubPublicRepoBrowser.data.remote.cached
 
+import com.rsav.githubPublicRepoBrowser.di.IoDispatcher
 import com.rsav.githubPublicRepoBrowser.util.L
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -17,20 +18,21 @@ import javax.inject.Singleton
 @Singleton
 class CachedRepoDataSource @Inject constructor(
     @param:Named("unauthenticated") private val okHttpClient: OkHttpClient,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun getIndex(): CachedIndexResponse = withContext(Dispatchers.IO) {
+    suspend fun getIndex(): CachedIndexResponse = withContext(ioDispatcher) {
         L.d(TAG, "getIndex()")
         fetchAndDecode("${BASE_URL}index.json")
     }
 
-    suspend fun getTrending(period: String): CachedTrendingResponse = withContext(Dispatchers.IO) {
+    suspend fun getTrending(period: String): CachedTrendingResponse = withContext(ioDispatcher) {
         L.d(TAG, "getTrending(period=$period)")
         fetchAndDecode("${BASE_URL}trending-$period.json")
     }
 
-    suspend fun getTopicRepos(topic: String): CachedTrendingResponse = withContext(Dispatchers.IO) {
+    suspend fun getTopicRepos(topic: String): CachedTrendingResponse = withContext(ioDispatcher) {
         L.d(TAG, "getTopicRepos(topic=$topic)")
         fetchAndDecode("${BASE_URL}topics/$topic.json")
     }
@@ -57,3 +59,8 @@ class CachedRepoDataSource @Inject constructor(
 
 /** Thrown when the cache is unreachable or returns an error. Signals fallback to live API. */
 class CacheUnavailableException(message: String) : Exception(message)
+
+/** Provides the list of available topics from the cache index. */
+fun interface AvailableTopicsProvider {
+    suspend fun getAvailableTopics(): List<String>
+}

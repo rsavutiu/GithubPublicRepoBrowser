@@ -111,6 +111,10 @@ class RepoMapperTest {
             ),
             createdAt = "2024-01-01T00:00:00Z",
             updatedAt = "2024-06-01T00:00:00Z",
+            licenseInfo = null,
+            openIssues = SearchRepositoriesQuery.OpenIssues(totalCount = 0),
+            closedIssues = SearchRepositoriesQuery.ClosedIssues(totalCount = 0),
+            repositoryTopics = SearchRepositoriesQuery.RepositoryTopics(nodes = emptyList()),
         )
     }
 }

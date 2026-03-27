@@ -2,16 +2,16 @@ package com.rsav.githubPublicRepoBrowser.ui.screen.detail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.rsav.githubPublicRepoBrowser.data.auth.GitHubAuthManager
+import com.rsav.githubPublicRepoBrowser.data.auth.IGitHubAuthManager
 import com.rsav.githubPublicRepoBrowser.data.parser.DependencyParser
-import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
-import com.rsav.githubPublicRepoBrowser.data.remote.ContributorDataSource
-import com.rsav.githubPublicRepoBrowser.data.remote.GitHubStarDataSource
-import com.rsav.githubPublicRepoBrowser.data.remote.SparklineDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.IContributorDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.IDependencyDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.IGitHubStarDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.ISparklineDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.DependencyInfo
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.repository.IFavoriteRepository
-import com.rsav.githubPublicRepoBrowser.domain.usecase.GetRepoDetailsUseCase
+import com.rsav.githubPublicRepoBrowser.domain.usecase.IGetRepoDetailsUseCase
 import com.rsav.githubPublicRepoBrowser.ui.components.atoms.AiProvider
 import com.rsav.githubPublicRepoBrowser.util.L
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,13 +31,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RepoDetailsViewModel @Inject constructor(
-    private val getRepoDetailsUseCase: GetRepoDetailsUseCase,
-    private val sparklineDataSource: SparklineDataSource,
-    private val contributorDataSource: ContributorDataSource,
-    private val apolloRepoDataSource: ApolloRepoDataSource,
+    private val getRepoDetailsUseCase: IGetRepoDetailsUseCase,
+    private val sparklineDataSource: ISparklineDataSource,
+    private val contributorDataSource: IContributorDataSource,
+    private val dependencyDataSource: IDependencyDataSource,
     private val favoriteRepository: IFavoriteRepository,
-    private val starDataSource: GitHubStarDataSource,
-    private val authManager: GitHubAuthManager,
+    private val starDataSource: IGitHubStarDataSource,
+    private val authManager: IGitHubAuthManager,
     private val parser: Parser,
     private val htmlRenderer: HtmlRenderer,
 ) : ViewModel() {
@@ -149,7 +149,7 @@ class RepoDetailsViewModel @Inject constructor(
         _uiState.update { it.copy(isDependenciesLoading = true, showDependencies = true) }
         viewModelScope.launch {
             try {
-                val data = apolloRepoDataSource.getRepositoryDependencies(
+                val data = dependencyDataSource.getRepositoryDependencies(
                     owner = repo.ownerLogin,
                     name = repo.name,
                 )

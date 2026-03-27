@@ -1,7 +1,6 @@
 package com.rsav.githubPublicRepoBrowser.data.repository
 
-import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
-import io.mockk.mockk
+import com.rsav.githubPublicRepoBrowser.testing.FakeApolloRepoDataSource
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNotNull
 import org.junit.Before
@@ -9,13 +8,13 @@ import org.junit.Test
 
 class RepoRepositoryImplTest {
 
-    private lateinit var dataSource: ApolloRepoDataSource
+    private lateinit var fakeDataSource: FakeApolloRepoDataSource
     private lateinit var repository: SearchRepositoriesImpl
 
     @Before
     fun setUp() {
-        dataSource = mockk()
-        repository = SearchRepositoriesImpl(dataSource)
+        fakeDataSource = FakeApolloRepoDataSource()
+        repository = SearchRepositoriesImpl(fakeDataSource::searchRepositories)
     }
 
     @Test

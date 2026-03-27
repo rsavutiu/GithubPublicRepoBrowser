@@ -1,7 +1,8 @@
 package com.rsav.githubPublicRepoBrowser.data.remote
 
+import com.rsav.githubPublicRepoBrowser.di.IoDispatcher
 import com.rsav.githubPublicRepoBrowser.util.L
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -10,17 +11,22 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
+interface ISparklineDataSource {
+    suspend fun getWeeklyCommits(owner: String, repo: String): List<Int>
+}
+
 @Singleton
 class SparklineDataSource @Inject constructor(
     private val okHttpClient: OkHttpClient,
-) {
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+) : ISparklineDataSource {
     private val cache = ConcurrentHashMap<String, List<Int>>()
 
-    suspend fun getWeeklyCommits(owner: String, repo: String): List<Int> {
+    override suspend fun getWeeklyCommits(owner: String, repo: String): List<Int> {
         val key = "$owner/$repo"
         cache[key]?.let { return it }
 
-        return withContext(Dispatchers.IO) {
+        return withContext(ioDispatcher) {
             try {
                 val request = Request.Builder()
                     .url("https://api.github.com/repos/$key/stats/participation")

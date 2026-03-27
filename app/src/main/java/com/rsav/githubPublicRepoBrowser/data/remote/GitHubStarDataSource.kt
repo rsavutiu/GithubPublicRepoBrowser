@@ -1,8 +1,9 @@
 package com.rsav.githubPublicRepoBrowser.data.remote
 
 import com.rsav.githubPublicRepoBrowser.data.auth.GitHubAuthManager
+import com.rsav.githubPublicRepoBrowser.di.IoDispatcher
 import com.rsav.githubPublicRepoBrowser.util.L
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -10,14 +11,22 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
+interface IGitHubStarDataSource {
+    suspend fun isStarred(owner: String, repo: String): Boolean?
+    suspend fun star(owner: String, repo: String): Boolean
+    suspend fun unstar(owner: String, repo: String): Boolean
+    suspend fun toggleStar(owner: String, repo: String): Boolean?
+}
+
 @Singleton
 class GitHubStarDataSource @Inject constructor(
     private val okHttpClient: OkHttpClient,
     private val authManager: GitHubAuthManager,
-) {
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
+) : IGitHubStarDataSource {
     private val starredCache = ConcurrentHashMap<String, Boolean>()
 
-    suspend fun isStarred(owner: String, repo: String): Boolean? = withContext(Dispatchers.IO) {
+    override suspend fun isStarred(owner: String, repo: String): Boolean? = withContext(ioDispatcher) {
         val key = "$owner/$repo"
         starredCache[key]?.let { return@withContext it }
 
@@ -38,7 +47,7 @@ class GitHubStarDataSource @Inject constructor(
         }
     }
 
-    suspend fun star(owner: String, repo: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun star(owner: String, repo: String): Boolean = withContext(ioDispatcher) {
         val key = "$owner/$repo"
         authManager.getAccessToken() ?: return@withContext false
         try {
@@ -59,7 +68,7 @@ class GitHubStarDataSource @Inject constructor(
         }
     }
 
-    suspend fun unstar(owner: String, repo: String): Boolean = withContext(Dispatchers.IO) {
+    override suspend fun unstar(owner: String, repo: String): Boolean = withContext(ioDispatcher) {
         val key = "$owner/$repo"
         authManager.getAccessToken() ?: return@withContext false
         try {
@@ -79,7 +88,7 @@ class GitHubStarDataSource @Inject constructor(
         }
     }
 
-    suspend fun toggleStar(owner: String, repo: String): Boolean? = withContext(Dispatchers.IO) {
+    override suspend fun toggleStar(owner: String, repo: String): Boolean? = withContext(ioDispatcher) {
         val currentlyStarred = isStarred(owner, repo) ?: return@withContext null
         if (currentlyStarred) {
             if (unstar(owner, repo)) false else null

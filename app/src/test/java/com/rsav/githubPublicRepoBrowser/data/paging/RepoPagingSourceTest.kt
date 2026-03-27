@@ -1,11 +1,11 @@
 package com.rsav.githubPublicRepoBrowser.data.paging
 
+import androidx.paging.PagingConfig
 import androidx.paging.PagingSource
+import androidx.paging.PagingState
 import com.rsav.githubPublicRepoBrowser.SearchRepositoriesQuery
 import com.rsav.githubPublicRepoBrowser.data.remote.ApolloQueryException
-import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
-import io.mockk.coEvery
-import io.mockk.mockk
+import com.rsav.githubPublicRepoBrowser.testing.FakeApolloRepoDataSource
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -15,13 +15,13 @@ import org.junit.Test
 
 class RepoPagingSourceTest {
 
-    private lateinit var dataSource: ApolloRepoDataSource
+    private lateinit var fakeDataSource: FakeApolloRepoDataSource
     private lateinit var pagingSource: RepoPagingSource
 
     @Before
     fun setUp() {
-        dataSource = mockk()
-        pagingSource = RepoPagingSource(dataSource, "kotlin")
+        fakeDataSource = FakeApolloRepoDataSource()
+        pagingSource = RepoPagingSource(fakeDataSource::searchRepositories, "kotlin")
     }
 
     @Test
@@ -31,7 +31,7 @@ class RepoPagingSourceTest {
             endCursor = "cursor1",
             hasNextPage = true,
         )
-        coEvery { dataSource.searchRepositories("kotlin", 20, null) } returns queryData
+        fakeDataSource.enqueue("kotlin", 20, null, queryData)
 
         val result = pagingSource.load(
             PagingSource.LoadParams.Refresh(key = null, loadSize = 20, placeholdersEnabled = false)
@@ -52,7 +52,7 @@ class RepoPagingSourceTest {
             endCursor = "cursor2",
             hasNextPage = true,
         )
-        coEvery { dataSource.searchRepositories("kotlin", 20, "cursor1") } returns queryData
+        fakeDataSource.enqueue("kotlin", 20, "cursor1", queryData)
 
         val result = pagingSource.load(
             PagingSource.LoadParams.Append(key = "cursor1", loadSize = 20, placeholdersEnabled = false)
@@ -71,7 +71,7 @@ class RepoPagingSourceTest {
             endCursor = null,
             hasNextPage = false,
         )
-        coEvery { dataSource.searchRepositories("kotlin", 20, "cursor2") } returns queryData
+        fakeDataSource.enqueue("kotlin", 20, "cursor2", queryData)
 
         val result = pagingSource.load(
             PagingSource.LoadParams.Append(key = "cursor2", loadSize = 20, placeholdersEnabled = false)
@@ -94,7 +94,7 @@ class RepoPagingSourceTest {
                 nodes = listOf(null),
             ),
         )
-        coEvery { dataSource.searchRepositories("kotlin", 20, null) } returns queryData
+        fakeDataSource.enqueue("kotlin", 20, null, queryData)
 
         val result = pagingSource.load(
             PagingSource.LoadParams.Refresh(key = null, loadSize = 20, placeholdersEnabled = false)
@@ -106,9 +106,7 @@ class RepoPagingSourceTest {
 
     @Test
     fun `exception returns LoadResult Error`() = runTest {
-        coEvery {
-            dataSource.searchRepositories("kotlin", 20, null)
-        } throws ApolloQueryException("GraphQL error")
+        fakeDataSource.exception = ApolloQueryException("GraphQL error")
 
         val result = pagingSource.load(
             PagingSource.LoadParams.Refresh(key = null, loadSize = 20, placeholdersEnabled = false)
@@ -119,8 +117,14 @@ class RepoPagingSourceTest {
     }
 
     @Test
-    fun `getRefreshKey returns null`() {
-        assertNull(pagingSource.getRefreshKey(mockk(relaxed = true)))
+    fun `getRefreshKey returns null for empty state`() {
+        val emptyState = PagingState<String, com.rsav.githubPublicRepoBrowser.domain.model.Repo>(
+            pages = emptyList(),
+            anchorPosition = null,
+            config = PagingConfig(pageSize = 20),
+            leadingPlaceholderCount = 0,
+        )
+        assertNull(pagingSource.getRefreshKey(emptyState))
     }
 
     private fun createTestData(
@@ -166,6 +170,10 @@ class RepoPagingSourceTest {
             ),
             createdAt = "2020-01-15T10:30:00Z",
             updatedAt = "2024-01-15T10:30:00Z",
+            licenseInfo = null,
+            openIssues = SearchRepositoriesQuery.OpenIssues(totalCount = 0),
+            closedIssues = SearchRepositoriesQuery.ClosedIssues(totalCount = 0),
+            repositoryTopics = SearchRepositoriesQuery.RepositoryTopics(nodes = emptyList()),
         )
     }
 }

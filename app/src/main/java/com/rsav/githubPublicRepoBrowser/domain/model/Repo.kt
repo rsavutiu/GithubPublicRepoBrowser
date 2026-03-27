@@ -1,8 +1,8 @@
 package com.rsav.githubPublicRepoBrowser.domain.model
 
-import kotlinx.serialization.Serializable
+import androidx.compose.runtime.Immutable
 
-@Serializable
+@Immutable
 data class Repo(
     val id: String,
     val name: String,
