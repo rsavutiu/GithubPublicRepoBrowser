@@ -48,3 +48,16 @@ google-services.json
 .cxx
 local.properties
 /.kotlin/sessions/kotlin-compiler-1069130486825337073.salive
+
+# Fastlane
+fastlane
+fastlane/play-store-key.json
+fastlane/report.xml
+fastlane/README.md
+
+# iOS resources
+/app/src/main/ios
+
+# Keystore
+keystore/*.jks
+keystore/*.keystore

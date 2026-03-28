@@ -33,13 +33,30 @@ android {
         buildConfigField("String", "GITHUB_CLIENT_SECRET", "\"${localProperties.getProperty("github.client.secret", "")}\"")
     }
 
+    signingConfigs {
+        getByName("debug") {
+            // Uses default debug keystore at ~/.android/debug.keystore
+        }
+        create("release") {
+            val ks = System.getenv("KEYSTORE_FILE")
+                ?: localProperties.getProperty("keystore.file")
+                ?: rootProject.file("keystore/release.jks").absolutePath
+            storeFile = file(ks)
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: localProperties.getProperty("keystore.password", "")
+            keyAlias = System.getenv("KEY_ALIAS") ?: localProperties.getProperty("key.alias", "radu")
+            keyPassword = System.getenv("KEY_PASSWORD") ?: localProperties.getProperty("key.password", "")
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     compileOptions {
