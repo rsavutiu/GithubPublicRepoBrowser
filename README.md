@@ -6,7 +6,6 @@ No more doomscrolling Twitter for repo recommendations. This app surfaces the be
 
 <p align="center">
   <img src="screenshots/trending_this_week.png" width="250" alt="Trending repos this week" />
-  <img src="screenshots/topic_picker.png" width="250" alt="Topic picker with searchable list" />
   <img src="screenshots/topic_filter.png" width="250" alt="Filtered by Android topic" />
 </p>
 
