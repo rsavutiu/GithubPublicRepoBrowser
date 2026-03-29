@@ -82,6 +82,15 @@ All ViewModels depend on interfaces only — fully testable with fakes (no mocki
 
 The token is required for the GitHub GraphQL API. Cached trending data loads without authentication.
 
+**Optional — OAuth (star/unstar repos):**
+Register a [GitHub OAuth App](https://github.com/settings/developers) with callback URL `ghrepobrowser://oauth/callback`, then add to `local.properties`:
+```properties
+github.client.id=your_client_id
+github.client.secret=your_client_secret
+```
+
+Requires Android 8.0+ (API 26). Targets SDK 36.
+
 ## Tech Stack
 
 | Library | Purpose |
@@ -92,6 +101,19 @@ The token is required for the GitHub GraphQL API. Cached trending data loads wit
 | Paging 3 | Infinite scroll pagination |
 | Navigation Compose | Type-safe navigation with shared element transitions |
 | Coil 3 | Image loading |
+| Room | Local database for favorites |
+| DataStore | Preferences and auth token storage |
 | CommonMark | Markdown to HTML rendering |
+| OkHttp | HTTP client with logging interceptors |
+| Kotlinx Serialization | JSON parsing for REST and cache |
+| Kotlinx Immutable Collections | Stable Compose state collections |
 | Turbine | Flow testing |
-| GitHub Actions + Pages | Free daily-updating static JSON cache backend |
+| GitHub Actions + Pages | Daily-updating JSON cache + Play Store deployment |
+
+## Deployment
+
+The app deploys to Google Play via Fastlane, triggered by pushing a version tag (`v*`) or manually via `workflow_dispatch`:
+
+- **Tracks:** internal, beta, production
+- **Pipeline:** `.github/workflows/deploy-play-store.yml` — builds release AAB, signs, and uploads via Fastlane
+- **Privacy Policy:** [rsavutiu.github.io/GithubPublicRepoBrowser/privacy-policy.html](https://rsavutiu.github.io/GithubPublicRepoBrowser/privacy-policy.html)
