@@ -71,8 +71,8 @@ fun computeHealthScore(repo: Repo): HealthScore {
     if (createdAt != null) {
         try {
             val created = ZonedDateTime.parse(createdAt, DateTimeFormatter.ISO_DATE_TIME)
-            val ageYears = ChronoUnit.DAYS.between(created, ZonedDateTime.now()) / 365.0
-            val starsPerYear = if (ageYears > 0) repo.stargazerCount / ageYears else repo.stargazerCount.toDouble()
+            val ageYears = (ChronoUnit.DAYS.between(created, ZonedDateTime.now()) / 365.0).coerceAtLeast(1.0 / 365.0)
+            val starsPerYear = repo.stargazerCount / ageYears
             growthScore = when {
                 starsPerYear >= 1000 -> 25f
                 starsPerYear >= 500 -> 21f

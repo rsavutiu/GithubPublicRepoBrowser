@@ -37,4 +37,5 @@ sealed interface DetailSideEffect {
     data class OpenBrowser(val url: String) : DetailSideEffect
     data object NavigateBack : DetailSideEffect
     data class LaunchAi(val provider: AiProvider, val prompt: String) : DetailSideEffect
+    data class LaunchOAuth(val url: String) : DetailSideEffect
 }

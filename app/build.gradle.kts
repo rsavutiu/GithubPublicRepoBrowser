@@ -126,6 +126,9 @@ dependencies {
     // DataStore
     implementation(libs.androidx.datastore.preferences)
 
+    // Security (for encrypted storage)
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

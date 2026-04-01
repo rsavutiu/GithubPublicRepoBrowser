@@ -17,7 +17,6 @@ class App : Application() {
                     .detectNetwork()
                     .detectCustomSlowCalls()
                     .penaltyLog()
-                    .penaltyDeath()
                     .build()
             )
             StrictMode.setVmPolicy(
@@ -27,10 +26,9 @@ class App : Application() {
                     .detectActivityLeaks()
                     .detectLeakedSqlLiteObjects()
                     .penaltyLog()
-                    .penaltyDeath()
                     .build()
             )
-            L.i(TAG, "StrictMode enabled")
+            L.i(TAG, "StrictMode enabled (logging only)")
         }
     }
 

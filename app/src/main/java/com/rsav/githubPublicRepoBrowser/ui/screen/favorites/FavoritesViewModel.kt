@@ -2,6 +2,7 @@ package com.rsav.githubPublicRepoBrowser.ui.screen.favorites
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.core.net.toUri
 import com.rsav.githubPublicRepoBrowser.data.auth.IGitHubAuthManager
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
 import com.rsav.githubPublicRepoBrowser.domain.repository.IFavoriteRepository
@@ -52,7 +53,17 @@ class FavoritesViewModel @Inject constructor(
         }
     }
 
-    fun getOAuthUrl(): String = authManager.getOAuthUrl()
+    suspend fun getOAuthUrl(): String = authManager.getOAuthUrl()
+
+    fun launchOAuthLogin(context: android.content.Context) {
+        viewModelScope.launch {
+            val intent = android.content.Intent(
+                android.content.Intent.ACTION_VIEW,
+                getOAuthUrl().toUri()
+            )
+            context.startActivity(intent)
+        }
+    }
 
     fun logout() {
         viewModelScope.launch { authManager.logout() }

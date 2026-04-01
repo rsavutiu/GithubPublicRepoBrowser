@@ -10,7 +10,7 @@ import com.rsav.githubPublicRepoBrowser.ui.navigation.AppNavGraph
 import com.rsav.githubPublicRepoBrowser.ui.theme.MyApplicationTheme
 import com.rsav.githubPublicRepoBrowser.util.L
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.MainScope
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -42,9 +42,15 @@ class MainActivity : ComponentActivity() {
         val uri = intent?.data ?: return
         if (uri.scheme == "ghrepobrowser" && uri.host == "oauth") {
             val code = uri.getQueryParameter("code") ?: return
-            L.i(TAG, "OAuth callback received with code")
-            MainScope().launch {
-                authManager.exchangeCodeForToken(code)
+            val state = uri.getQueryParameter("state") ?: return
+            L.i(TAG, "OAuth callback received with code and state")
+
+            // Use lifecycleScope to prevent memory leaks
+            lifecycleScope.launch {
+                val success = authManager.exchangeCodeForToken(code, state)
+                if (!success) {
+                    L.e(TAG, "OAuth token exchange failed")
+                }
             }
         }
     }

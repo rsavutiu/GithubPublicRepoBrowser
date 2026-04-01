@@ -66,6 +66,12 @@ class UserReposViewModel @Inject constructor(
                 } else {
                     _uiState.value = _uiState.value.copy(isLoading = false, error = "User not found")
                 }
+            } catch (e: java.io.IOException) {
+                L.e(TAG, "Network error loading user profile: ${e.message}", e)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = "Network error — check your connection",
+                )
             } catch (e: Exception) {
                 L.e(TAG, "Failed to load user profile: ${e.message}", e)
                 _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)

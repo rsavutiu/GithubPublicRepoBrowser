@@ -184,6 +184,9 @@ class RepoSearchViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(availableTopics = topics, loadingTopics = false)
                     }
+                } catch (e: java.io.IOException) {
+                    L.e(TAG, "Network error fetching topics: ${e.message}", e)
+                    _uiState.update { it.copy(loadingTopics = false) }
                 } catch (e: Exception) {
                     L.e(TAG, "Failed to fetch available topics", e)
                     _uiState.update { it.copy(loadingTopics = false) }

@@ -1,0 +1,147 @@
+[
+  // Eclipse-style navigation shortcuts
+  {
+    "key": "ctrl+shift+r",
+    "command": "workbench.action.quickOpen"
+  },
+  {
+    "key": "ctrl+shift+t",
+    "command": "workbench.action.showAllSymbols"
+  },
+  {
+    "key": "ctrl+e",
+    "command": "workbench.action.openRecent"
+  },
+  {
+    "key": "ctrl+o",
+    "command": "workbench.action.gotoSymbol"
+  },
+  {
+    "key": "ctrl+shift+o",
+    "command": "editor.action.organizeImports"
+  },
+  {
+    "key": "f3",
+    "command": "editor.action.goToDeclaration"
+  },
+  {
+    "key": "ctrl+t",
+    "command": "editor.action.showTypeHierarchy"
+  },
+  
+  // Eclipse-style editing shortcuts
+  {
+    "key": "ctrl+1",
+    "command": "editor.action.quickFix"
+  },
+  {
+    "key": "ctrl+space",
+    "command": "editor.action.triggerSuggest",
+    "when": "editorHasCompletionItemProvider && textInputFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+shift+f",
+    "command": "editor.action.format"
+  },
+  {
+    "key": "ctrl+shift+/",
+    "command": "editor.action.blockComment",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+/",
+    "command": "editor.action.commentLine",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+d",
+    "command": "editor.action.deleteLines",
+    "when": "textInputFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+alt+down",
+    "command": "editor.action.copyLinesDownAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "ctrl+alt+up",
+    "command": "editor.action.copyLinesUpAction",
+    "when": "editorTextFocus && !editorReadonly"
+  },
+  
+  // Eclipse-style search shortcuts
+  {
+    "key": "ctrl+h",
+    "command": "workbench.action.findInFiles"
+  },
+  {
+    "key": "ctrl+shift+g",
+    "command": "references-view.findReferences"
+  },
+  {
+    "key": "ctrl+f",
+    "command": "actions.find"
+  },
+  {
+    "key": "ctrl+k",
+    "command": "editor.action.nextMatchFindAction",
+    "when": "editorFocus"
+  },
+  {
+    "key": "ctrl+shift+k",
+    "command": "editor.action.previousMatchFindAction",
+    "when": "editorFocus"
+  },
+  
+  // Eclipse-style window management
+  {
+    "key": "ctrl+m",
+    "command": "workbench.action.toggleEditorWidth"
+  },
+  {
+    "key": "ctrl+shift+w",
+    "command": "workbench.action.closeAllEditors"
+  },
+  {
+    "key": "ctrl+n",
+    "command": "workbench.action.files.newUntitledFile"
+  },
+  
+  // Eclipse-style refactor shortcuts
+  {
+    "key": "alt+shift+r",
+    "command": "editor.action.rename",
+    "when": "editorHasRenameProvider && editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+shift+m",
+    "command": "editor.action.codeAction",
+    "args": {
+      "kind": "refactor.extract.method"
+    },
+    "when": "editorHasCodeActionsProvider && editorTextFocus && !editorReadonly"
+  },
+  {
+    "key": "alt+shift+l",
+    "command": "editor.action.codeAction",
+    "args": {
+      "kind": "refactor.extract.constant"
+    },
+    "when": "editorHasCodeActionsProvider && editorTextFocus && !editorReadonly"
+  },
+  
+  // Eclipse-style run/debug
+  {
+    "key": "f11",
+    "command": "editor.debug.action.toggleBreakpoint",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "ctrl+f11",
+    "command": "workbench.action.tasks.runTestTask"
+  },
+  {
+    "key": "ctrl+b",
+    "command": "workbench.action.tasks.build"
+  }
+]

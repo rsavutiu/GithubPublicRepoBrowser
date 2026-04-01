@@ -30,12 +30,20 @@ Every time you use the local Ollama LLM, you MUST prefix the relevant output wit
 
 This tells the user that the response came from the local model, not Claude.
 
-### Available models (IPEX-LLM Ollama 0.9.3 compatible)
-- `qwen2.5:3b` — fast default for summaries, drafts, Q&A
-- `llama3.2:3b` — translations, simple tasks
-- `codellama:7b` — code-focused boilerplate and completions
-- `mistral:7b` — best general quality, use for important drafts
-- `granite3.2:8b` — structured extraction, tool-style output
+### Model selection (IPEX-LLM Ollama 0.9.3 compatible)
+
+This is a coding project. **Default model is `codellama:7b`** for all code tasks. Use `mcp__ollama__chat_completion` with explicit model param for code — the `mcp__local-llm__*` tools default to `qwen2.5:3b` which is weaker at code.
+
+| Model | When to use |
+|---|---|
+| **`codellama:7b`** | **DEFAULT** — previews, boilerplate, data classes, tests, XML, any code |
+| `mistral:7b` | Important prose — PR descriptions, README sections, architecture docs |
+| `qwen2.5:3b` | Quick throwaway — commit messages, one-line summaries |
+| `granite3.2:8b` | Structured extraction — parsing logs, structured output |
+| `llama3.2:3b` | Translations, string resources for i18n |
+
+### 10-line rule
+Before writing ≥10 lines of repetitive/templated code or text, STOP and delegate to local LLM. No exceptions. Claude reviews and fixes the output (expect ~30% rework), but that's still cheaper than generating 100% on Opus.
 
 Note: IPEX-LLM Ollama is v0.9.3. Models requiring newer Ollama (like qwen3-vl) will NOT work.
 Always pull models using the IPEX-LLM binary: `C:\Users\rsavu\ipex-llm-ollama\ollama.exe pull <model>`

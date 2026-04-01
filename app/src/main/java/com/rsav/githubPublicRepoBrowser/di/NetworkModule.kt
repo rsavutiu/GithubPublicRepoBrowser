@@ -4,7 +4,7 @@ import android.net.TrafficStats
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.network.okHttpClient
 import com.rsav.githubPublicRepoBrowser.BuildConfig
-import com.rsav.githubPublicRepoBrowser.data.auth.GitHubAuthManager
+import com.rsav.githubPublicRepoBrowser.data.auth.IGitHubAuthManager
 import com.rsav.githubPublicRepoBrowser.data.paging.RepoSearchFunction
 import com.rsav.githubPublicRepoBrowser.data.remote.ApolloRepoDataSource
 import com.rsav.githubPublicRepoBrowser.data.remote.cached.CachedRepoDataSource
@@ -18,6 +18,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import java.net.Socket
+import java.util.concurrent.TimeUnit
 import javax.inject.Named
 import javax.inject.Singleton
 import javax.net.SocketFactory
@@ -31,10 +32,14 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(authManager: GitHubAuthManager): OkHttpClient {
+    fun provideOkHttpClient(authManager: IGitHubAuthManager): OkHttpClient {
         L.d(TAG, "Creating OkHttpClient")
         return OkHttpClient.Builder()
             .socketFactory(TaggedSocketFactory())
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             .addInterceptor(Interceptor { chain ->
                 // Prefer user's OAuth token, fall back to build config PAT
                 val token = runBlocking { authManager.getAccessToken() }
@@ -77,6 +82,10 @@ object NetworkModule {
         L.d(TAG, "Creating unauthenticated OkHttpClient (for GitHub Pages cache)")
         return OkHttpClient.Builder()
             .socketFactory(TaggedSocketFactory())
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             .build()
     }
 

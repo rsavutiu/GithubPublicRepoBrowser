@@ -1,6 +1,7 @@
 package com.rsav.githubPublicRepoBrowser.ui.screen.favorites
 
 import android.content.Intent
+import androidx.lifecycle.viewModelScope
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -89,8 +90,7 @@ fun FavoritesScreen(
                     username = uiState.username,
                     avatarUrl = uiState.avatarUrl,
                     onLogin = {
-                        val intent = Intent(Intent.ACTION_VIEW, viewModel.getOAuthUrl().toUri())
-                        context.startActivity(intent)
+                        viewModel.launchOAuthLogin(context)
                     },
                     onLogout = { viewModel.logout() },
                 )

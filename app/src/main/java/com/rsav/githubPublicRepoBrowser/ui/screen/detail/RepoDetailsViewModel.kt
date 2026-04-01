@@ -7,6 +7,7 @@ import com.rsav.githubPublicRepoBrowser.data.parser.DependencyParser
 import com.rsav.githubPublicRepoBrowser.data.remote.IContributorDataSource
 import com.rsav.githubPublicRepoBrowser.data.remote.IDependencyDataSource
 import com.rsav.githubPublicRepoBrowser.data.remote.IGitHubStarDataSource
+import com.rsav.githubPublicRepoBrowser.data.remote.StarResult
 import com.rsav.githubPublicRepoBrowser.data.remote.ISparklineDataSource
 import com.rsav.githubPublicRepoBrowser.domain.model.DependencyInfo
 import com.rsav.githubPublicRepoBrowser.domain.model.Repo
@@ -50,12 +51,22 @@ class RepoDetailsViewModel @Inject constructor(
 
     private var currentRepo: Repo? = null
     private var rawMarkdown: String? = null
+    private var pendingStarAfterAuth = false
 
     init {
         // Track login state
         viewModelScope.launch {
             authManager.isLoggedIn.collect { loggedIn ->
                 _uiState.update { it.copy(isLoggedIn = loggedIn) }
+            }
+        }
+        // Retry pending star after successful OAuth login
+        viewModelScope.launch {
+            authManager.loginEvent.collect {
+                if (pendingStarAfterAuth) {
+                    pendingStarAfterAuth = false
+                    retryStarToggle()
+                }
             }
         }
     }
@@ -136,9 +147,26 @@ class RepoDetailsViewModel @Inject constructor(
     private fun handleToggleStar() {
         val repo = currentRepo ?: return
         viewModelScope.launch {
-            val result = starDataSource.toggleStar(repo.ownerLogin, repo.name)
-            if (result != null) {
-                _uiState.update { it.copy(isStarred = result) }
+            when (val result = starDataSource.toggleStar(repo.ownerLogin, repo.name)) {
+                is StarResult.Success -> _uiState.update { it.copy(isStarred = result.isStarred) }
+                is StarResult.AuthRequired -> {
+                    pendingStarAfterAuth = true
+                    val url = authManager.getOAuthUrl()
+                    _sideEffects.send(DetailSideEffect.LaunchOAuth(url))
+                }
+                is StarResult.Failed -> L.e(TAG, "toggleStar failed")
+            }
+        }
+    }
+
+    /** Retry star after OAuth — never re-launches OAuth to prevent loops. */
+    private fun retryStarToggle() {
+        val repo = currentRepo ?: return
+        viewModelScope.launch {
+            when (val result = starDataSource.toggleStar(repo.ownerLogin, repo.name)) {
+                is StarResult.Success -> _uiState.update { it.copy(isStarred = result.isStarred) }
+                is StarResult.AuthRequired -> L.e(TAG, "Star still requires auth after login")
+                is StarResult.Failed -> L.e(TAG, "Star retry failed")
             }
         }
     }

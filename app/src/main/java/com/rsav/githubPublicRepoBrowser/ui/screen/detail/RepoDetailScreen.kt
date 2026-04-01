@@ -116,6 +116,10 @@ fun RepoDetailScreen(
                 is DetailSideEffect.LaunchAi -> {
                     launchAiProvider(context, effect.provider, effect.prompt)
                 }
+                is DetailSideEffect.LaunchOAuth -> {
+                    val intent = Intent(Intent.ACTION_VIEW, effect.url.toUri())
+                    context.startActivity(intent)
+                }
             }
         }
     }
@@ -171,19 +175,19 @@ fun RepoDetailContent(
                         )
                     }
                     // GitHub star button (only if logged in)
-                    if (uiState.isLoggedIn) {
-                        IconButton(onClick = { onIntent(DetailIntent.ToggleStar) }) {
-                            Icon(
-                                imageVector = if (uiState.isStarred == true) Icons.Default.Star else Icons.Default.StarBorder,
-                                contentDescription = stringResource(R.string.star_on_github_desc),
-                                tint = if (uiState.isStarred == true) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                    IconButton(onClick = { onIntent(DetailIntent.ToggleStar) }) {
+                        Icon(
+                            imageVector = if (uiState.isStarred == true) Icons.Default.Star else Icons.Default.StarBorder,
+                            contentDescription = stringResource(R.string.star_on_github_desc),
+                            tint = if (uiState.isStarred == true) Color(0xFFFFD700) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                     // Share button
                     IconButton(onClick = {
+                        val shareText = context.getString(R.string.share_repo_text, repo.url) +
+                            context.getString(R.string.share_app_footer)
                         val sendIntent = Intent(Intent.ACTION_SEND).apply {
-                            putExtra(Intent.EXTRA_TEXT, context.getString(R.string.share_repo_text, repo.url))
+                            putExtra(Intent.EXTRA_TEXT, shareText)
                             type = "text/plain"
                         }
                         context.startActivity(Intent.createChooser(sendIntent, null))
