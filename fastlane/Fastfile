@@ -17,6 +17,7 @@ platform :android do
     upload_to_play_store(
       track: "internal",
       aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_apk: true,
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
@@ -31,11 +32,25 @@ platform :android do
     )
   end
 
-  desc "Promote beta to production"
+  desc "Promote internal to production"
+  # Promotes straight from internal, which is where the :internal lane
+  # uploads. The optional :beta lane is a separate, manual step; promoting
+  # from an empty beta track fails.
   lane :production do
+    # Resolve the version code sitting on internal so the promotion needs no
+    # arguments; upload_to_play_store cannot locate changelogs without it.
+    codes = google_play_track_version_codes(track: "internal")
+    UI.user_error!("Nothing on the internal track to promote") if codes.empty?
+
     upload_to_play_store(
-      track: "beta",
-      track_promote_to: "production"
+      version_code: codes.max,
+      track: "internal",
+      track_promote_to: "production",
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
     )
   end
 
@@ -56,6 +71,7 @@ platform :android do
     upload_to_play_store(
       track: "production",
       aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_apk: true,
       skip_upload_metadata: true,
       skip_upload_images: true,
       skip_upload_screenshots: true
