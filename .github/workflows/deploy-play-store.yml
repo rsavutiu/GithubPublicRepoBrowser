@@ -36,14 +36,16 @@ jobs:
           bundler-cache: true
 
       - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore/release.jks
+        run: |
+          mkdir -p keystore
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore/release.jks
 
       - name: Create local.properties
         run: |
           echo "sdk.dir=$ANDROID_HOME" > local.properties
           echo "github.token=${{ secrets.APP_GITHUB_TOKEN }}" >> local.properties
-          echo "github.client.id=${{ secrets.GITHUB_CLIENT_ID }}" >> local.properties
-          echo "github.client.secret=${{ secrets.GITHUB_CLIENT_SECRET }}" >> local.properties
+          echo "github.client.id=${{ secrets.APP_GITHUB_CLIENT_ID }}" >> local.properties
+          echo "github.client.secret=${{ secrets.APP_GITHUB_CLIENT_SECRET }}" >> local.properties
 
       - name: Create Play Store key file
         run: echo '${{ secrets.PLAY_STORE_JSON_KEY }}' > fastlane/play-store-key.json

@@ -1,0 +1,65 @@
+default_platform(:android)
+
+platform :android do
+
+  desc "Build release AAB"
+  lane :build do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: "./"
+    )
+  end
+
+  desc "Deploy to Play Store internal testing track"
+  lane :internal do
+    build
+    upload_to_play_store(
+      track: "internal",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  desc "Promote internal to closed beta"
+  lane :beta do
+    upload_to_play_store(
+      track: "internal",
+      track_promote_to: "beta"
+    )
+  end
+
+  desc "Promote beta to production"
+  lane :production do
+    upload_to_play_store(
+      track: "beta",
+      track_promote_to: "production"
+    )
+  end
+
+  desc "Upload metadata, screenshots, and images to all locales"
+  lane :metadata do
+    upload_to_play_store(
+      skip_upload_aab: true,
+      skip_upload_apk: true,
+      skip_upload_changelogs: true,
+      track: "internal",
+      sync_image_upload: true
+    )
+  end
+
+  desc "Deploy directly to production (use with caution)"
+  lane :deploy do
+    build
+    upload_to_play_store(
+      track: "production",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+end

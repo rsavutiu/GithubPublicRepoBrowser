@@ -65,3 +65,11 @@
 # ---- Navigation serialization (type-safe nav args) ----
 -keep class com.rsav.githubPublicRepoBrowser.domain.model.Repo { *; }
 -keep class com.rsav.githubPublicRepoBrowser.ui.navigation.** { *; }
+
+# ---- Tink / androidx.security-crypto (EncryptedSharedPreferences) ----
+# Tink references Error Prone annotations that are compile-time only and are
+# not on the runtime classpath. Without these, R8 fails the release build.
+-dontwarn com.google.errorprone.annotations.CanIgnoreReturnValue
+-dontwarn com.google.errorprone.annotations.CheckReturnValue
+-dontwarn com.google.errorprone.annotations.Immutable
+-dontwarn com.google.errorprone.annotations.RestrictedApi

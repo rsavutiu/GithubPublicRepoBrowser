@@ -50,7 +50,22 @@ local.properties
 /.kotlin/sessions/kotlin-compiler-1069130486825337073.salive
 
 # Fastlane
-fastlane
+# Ignore everything under fastlane/ by default so service-account keys and
+# generated reports can never be committed, then re-allow only the lane
+# definitions and changelog text that CI genuinely needs.
+fastlane/*
+!fastlane/Fastfile
+!fastlane/Appfile
+!fastlane/metadata/
+fastlane/metadata/*
+!fastlane/metadata/android/
+fastlane/metadata/android/*
+!fastlane/metadata/android/en-US/
+fastlane/metadata/android/en-US/*
+!fastlane/metadata/android/en-US/changelogs/
+
+# Never commit credentials, whatever the rules above allow
+fastlane/*.json
 fastlane/play-store-key.json
 fastlane/report.xml
 fastlane/README.md
