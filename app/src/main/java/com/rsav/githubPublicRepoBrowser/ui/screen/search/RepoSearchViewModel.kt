@@ -21,14 +21,13 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -60,8 +59,14 @@ class RepoSearchViewModel @Inject constructor(
 
     private val _searchTrigger = MutableSharedFlow<SearchParams>(replay = 1)
 
+    /**
+     * Loaded pages are cached for the ViewModel's whole lifetime: [cachedIn] sits *outside*
+     * [flatMapLatest] and nothing is chained after it. That keeps already-fetched pages alive
+     * while the user is on the detail screen, so coming back restores the list and the scroll
+     * position instead of rebuilding the Pager from page 1.
+     */
     @OptIn(FlowPreview::class)
-    val pagingData: StateFlow<PagingData<Repo>> = _searchTrigger
+    val pagingData: Flow<PagingData<Repo>> = _searchTrigger
         .debounce { if (it.freeText.isEmpty()) 0 else 500 }
         .flatMapLatest { params ->
             L.d(TAG, "flatMapLatest triggered — params=$params")
@@ -71,9 +76,9 @@ class RepoSearchViewModel @Inject constructor(
                 programmingLanguage = params.programmingLanguage,
                 spokenLanguage = params.spokenLanguage,
                 topics = params.topics,
-            ).cachedIn(viewModelScope)
+            )
         }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), PagingData.empty())
+        .cachedIn(viewModelScope)
 
     init {
         L.i(TAG, "init — emitting default search params")
